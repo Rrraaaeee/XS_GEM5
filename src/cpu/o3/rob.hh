@@ -55,6 +55,7 @@
 #include "cpu/reg_class.hh"
 #include "enums/ROBWalkPolicy.hh"
 #include "enums/SMTQueuePolicy.hh"
+#include "sim/probe/probe.hh"
 
 namespace gem5
 {
@@ -93,6 +94,8 @@ class ROB
     SMTQueuePolicy robPolicy;
 
     ROBWalkPolicy robWalkPolicy;
+
+    ProbePointArg<DynInstPtr> *ppSquash;
 
   public:
     /** ROB constructor.
@@ -218,6 +221,8 @@ class ROB
 
     /** Updates the tail instruction with the new youngest instruction. */
     void updateTail();
+
+    void regProbePoints();
 
     /** Reads the PC of the oldest head instruction. */
 //    uint64_t readHeadPC();

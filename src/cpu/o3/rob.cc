@@ -441,6 +441,8 @@ ROB::doSquash(ThreadID tid)
 
         (*squashIt[tid])->setCanCommit();
 
+        ppSquash->notify(*squashIt[tid]);
+
         // printf("[ROB] squash seqNum %ld\n", (*squashIt[tid])->seqNum);
 
         auto prevIt = std::prev(squashIt[tid]);
@@ -486,6 +488,8 @@ ROB::doSquash(ThreadID tid)
         squashIt[tid] = instList[tid].end();
 
         doneSquashing[tid] = true;
+
+        ppSquash->notify(nullptr); // indicate end of squash
     }
 
     if (robTailUpdate) {
@@ -691,6 +695,14 @@ ROB::findInst(ThreadID tid, InstSeqNum squash_inst)
         }
     }
     return NULL;
+}
+
+void
+ROB::regProbePoints()
+{
+    ppSquash = new ProbePointArg<DynInstPtr>(
+            cpu->getProbeManager(), "RobSquash");
+    ppSquash->addListener(&cpu->rename);
 }
 
 } // namespace o3

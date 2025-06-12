@@ -60,7 +60,8 @@ namespace o3
 {
 
 Rename::Rename(CPU *_cpu, const BaseO3CPUParams &params)
-    : cpu(_cpu),
+    : ProbeListener(_cpu->getProbeManager(), "ren"),
+      cpu(_cpu),
       iewToRenameDelay(params.iewToRenameDelay),
       decodeToRenameDelay(params.decodeToRenameDelay),
       commitToRenameDelay(params.commitToRenameDelay),
@@ -1687,6 +1688,11 @@ Rename::checkRenameStallFromIEW(ThreadID tid)
     } else {
         return robHeadStallReason;
     }
+}
+
+void
+Rename::notify(DynInstPtr inst)
+{
 }
 
 } // namespace o3

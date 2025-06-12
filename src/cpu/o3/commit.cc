@@ -187,6 +187,7 @@ Commit::regProbePoints()
             cpu->getProbeManager(), "CommitStall");
     ppSquash = new ProbePointArg<DynInstPtr>(
             cpu->getProbeManager(), "Squash");
+    rob->regProbePoints();
 }
 
 Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
