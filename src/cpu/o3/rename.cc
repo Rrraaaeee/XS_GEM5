@@ -91,6 +91,13 @@ Rename::Rename(CPU *_cpu, const BaseO3CPUParams &params)
     }
 
     renameStalls.resize(renameWidth, StallReason::NoStall);
+
+    /*=================*/
+    /*      RCVG       */
+    /*=================*/
+
+    squash_ctx.regStats(&stats);
+    squash_ctx.reset(NUM_STREAMS, SIZ_STREAM);
 }
 
 std::string
@@ -154,7 +161,13 @@ Rename::RenameStats::RenameStats(statistics::Group *parent)
       ADD_STAT(constantFolded, statistics::units::Count::get(),
                "count of insts eliminated by constant folding"),
       ADD_STAT(stallEvents, statistics::units::Count::get(),
-               "count of stall events")
+               "count of stall events"),
+      ADD_STAT(rcvgFound, statistics::units::Count::get(),
+               "count of times we find a reconvergence point"),
+      ADD_STAT(rcvgPreLen, statistics::units::Count::get(),
+               "Distribution of rcvg pre len"),
+      ADD_STAT(rcvgPosLen, statistics::units::Count::get(),
+               "Distribution of rcvg post len")
 {
     squashCycles.prereq(squashCycles);
     idleCycles.prereq(idleCycles);
@@ -202,6 +215,18 @@ Rename::RenameStats::RenameStats(statistics::Group *parent)
     for (int i = 0; i < StallEventCount; i++) {
         stallEvents.subname(i, stall_event_str[static_cast<StallEvent>(i)]);
     }
+
+    rcvgPreLen
+        .init(/* base value */ 0,
+              /* last value */ 256,
+              /* bucket size */ 1)
+        .flags(statistics::pdf);
+
+    rcvgPosLen
+        .init(/* base value */ 0,
+              /* last value */ 256,
+              /* bucket size */ 1)
+        .flags(statistics::pdf);
 }
 
 void
@@ -865,6 +890,28 @@ Rename::renameInsts(ThreadID tid)
 
             serializeAfter(insts_to_rename, tid);
         }
+
+        /*=================*/
+        /*  RCVG BEGIN     */
+        /*=================*/
+
+        if (squash_ctx.state==IDLE || squash_ctx.state==SQUASHING) {
+            // Search WPQ to find a rcvg.
+            // If found, transit state to RCVG / CONCURRENT.
+            squash_ctx.try_find_rcvg(inst);
+        }
+
+        if (squash_ctx.state==RCVG || squash_ctx.state==CONCURRENT) {
+            // We are in RCVG mode, detect if we have divergence and advance
+            squash_ctx.try_find_dvrg(inst);
+        }
+
+
+        /*=================*/
+        /*  RCVG END       */
+        /*=================*/
+
+
         renameSrcRegs(inst, inst->threadNumber);
 
         renameDestRegs(inst, inst->threadNumber);
@@ -1693,6 +1740,120 @@ Rename::checkRenameStallFromIEW(ThreadID tid)
 void
 Rename::notify(DynInstPtr inst)
 {
+    if (!inst) {
+        // end of squash
+        if (squash_ctx.state==SQUASHING) {
+            squash_ctx.state = IDLE;
+            squash_ctx.inc_wpt();
+        } else if (squash_ctx.state==CONCURRENT) {
+            squash_ctx.state = RCVG;
+            squash_ctx.inc_wpt();
+        }
+        return;
+    }
+
+    if ((squash_ctx.state==IDLE) ||
+        (squash_ctx.state==RCVG && squash_ctx.wpt==squash_ctx.rpt)) {
+        // clear a new stream
+        squash_ctx.state = SQUASHING;
+        squash_ctx.get_stream_write().reset();
+    } else if (squash_ctx.state==RCVG) {
+        // rcvg and squash can happen concurently,
+        // since wpt and rpt do not point to same stream
+        squash_ctx.state = CONCURRENT;
+    }
+
+    // accept next squash inst
+    if (squash_ctx.stream_write_full())
+        // stream full, not accepting anymore
+        return;
+
+    squash_ctx.get_stream_write().accept(inst);
+}
+
+void Rename::SquashStream::accept(DynInstPtr inst)
+{
+     // for simplicity, assume wqp and sql both use inst granularity
+    assert(wpq.size()==sql.size());
+
+    wpq.push_front({.seqNum=inst->seqNum,
+                      .pc    =inst->pcState().instAddr()});
+    sql.push_front({.vld=inst->isExecuted()});
+
+}
+
+bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)
+{
+    assert(state==IDLE || state==SQUASHING);
+
+    // TODO: multihit among streams / within a stream
+    for (int i = 0; i < num_streams; i++) {
+        bool found = get_stream(i).try_find_rcvg(inst);
+        if (found) {
+            rpt = i;
+            state = (state==SQUASHING) ? CONCURRENT : RCVG;
+            stats->rcvgFound ++;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Rename::SquashReuseCtx::try_find_dvrg(const DynInstPtr& inst)
+{
+    assert(state==CONCURRENT || state==RCVG);
+    auto& curr_stream = get_stream(rpt);
+    bool found = curr_stream.try_find_dvrg(inst);
+    if (found) {
+        state = (state==CONCURRENT) ? SQUASHING : IDLE;
+        stats->rcvgPreLen.sample(curr_stream.pre_rcvg_len);
+        stats->rcvgPosLen.sample(curr_stream.pos_rcvg_len);
+
+        assert(curr_stream.pre_rcvg_len <= siz_stream);
+        assert(curr_stream.pos_rcvg_len <= siz_stream);
+
+        // clear stream
+        get_stream(rpt).reset();
+        return true;
+    }
+
+    return false;
+}
+
+bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
+{
+    assert(wpq.size() == sql.size());
+
+    wpq_it = wpq.begin();
+    sql_it = sql.begin();
+    Addr pc = inst->pcState().instAddr();
+    while (wpq_it != wpq.end()) {
+        if (wpq_it->pc == pc) {
+            return true;
+        }
+        wpq_it ++;
+        sql_it ++;
+        pre_rcvg_len ++;
+    }
+
+    // did not find rcvg, reset pre_rcvg_len
+    pre_rcvg_len = 0;
+    return false;
+}
+
+bool Rename::SquashStream::try_find_dvrg(const DynInstPtr& inst)
+{
+    Addr pc = inst->pcState().instAddr();
+    if (wpq_it == wpq.end() || wpq_it->pc != pc) {
+        // either pc diverge, or end of stream
+        return true;
+    }
+
+    pos_rcvg_len ++;
+    wpq_it ++;
+    sql_it ++;
+    return false;
 }
 
 } // namespace o3

@@ -560,6 +560,10 @@ class Rename : public ProbeListener
         statistics::Scalar constantFolded;
 
         statistics::Vector stallEvents;
+
+        statistics::Scalar rcvgFound;
+        statistics::Distribution rcvgPreLen;
+        statistics::Distribution rcvgPosLen;
     } stats;
 
     std::vector<StallReason> renameStalls;
@@ -572,7 +576,127 @@ class Rename : public ProbeListener
 
     SquashVersion localSquashVer;
 
+
+    /*=================*/
+    /*      RCVG       */
+    /*=================*/
+
+public:
+
+    const int NUM_STREAMS = 8;
+    const int SIZ_STREAM  = 64;
+
+    struct InstInfo {
+        // for assertion
+        InstSeqNum seqNum;
+        // actual hardware
+        Addr pc;
+    };
+
+    struct ReuseInfo {
+        // for assertion
+
+        // actual hardware
+        bool vld;            // is executed
+                             // ....
+
+    };
+
+    struct SquashStream {
+        // for simulation only
+        int pre_rcvg_len;
+        int pos_rcvg_len;
+
+        // Wrong path queue, for storing inst sequence
+        std::deque<InstInfo> wpq;
+        std::deque<InstInfo>::iterator wpq_it;
+
+        // Squash log, for storing reuse info
+        std::deque<ReuseInfo> sql;
+        std::deque<ReuseInfo>::iterator sql_it;
+
+        // util functions
+        void reset() {
+            wpq.clear();
+            sql.clear();
+            wpq_it = wpq.begin();
+            sql_it = sql.begin();
+            pre_rcvg_len = 0;
+            pos_rcvg_len = 0;
+        }
+
+        void accept(DynInstPtr inst);
+        bool try_find_rcvg(const DynInstPtr& inst);
+        bool try_find_dvrg(const DynInstPtr& inst);
+    };
+
+    enum SquashReuseCtxState {
+        IDLE,
+        SQUASHING,
+        RCVG,
+        CONCURRENT,
+        NUM_STATES
+    };
+
+    struct SquashReuseCtx {
+        // ctx info, simulation only
+        int num_streams;
+        int siz_stream;
+        RenameStats* stats;
+
+        // actual hardware
+        int wpt;
+        int rpt;
+        SquashReuseCtxState state;
+        std::vector<SquashStream> squash_streams;
+        int rgid_pool[64]; // one global ctr for each arch reg
+
+        void regStats(RenameStats* _stats) {
+            stats = _stats;
+        }
+
+        void reset(int _num_streams, int _siz_stream) {
+
+            num_streams = _num_streams;
+            siz_stream = _siz_stream;
+
+            wpt  = 0;
+            rpt  = 0;
+            state = IDLE;
+
+            squash_streams.resize(num_streams);
+            for (int i = 0; i < num_streams; i++)
+                squash_streams[i].reset();
+
+            memset(rgid_pool, 0, 64*sizeof(int));
+
+        }
+
+        void inc_wpt() {
+            wpt = wpt==(num_streams-1) ? 0 : wpt +1;
+        }
+
+        SquashStream& get_stream_write() {
+            return squash_streams[wpt];
+        }
+
+        SquashStream& get_stream(int i) {
+            return squash_streams[i];
+        }
+
+        bool stream_write_full() {
+            return squash_streams[wpt].wpq.size() >= siz_stream;
+        }
+
+        bool try_find_rcvg(const DynInstPtr& inst);
+        bool try_find_dvrg(const DynInstPtr& inst);
+    };
+
+
+    SquashReuseCtx squash_ctx;
+
     virtual void notify(DynInstPtr inst);
+
 };
 
 } // namespace o3
