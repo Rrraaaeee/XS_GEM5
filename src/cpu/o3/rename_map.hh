@@ -72,8 +72,10 @@ class SimpleRenameMap
 {
   private:
     using Arch2PhysMap = std::vector<VirtRegId>;
+    using Arch2RgidMap = std::vector<uint32_t>;
     /** The acutal arch-to-phys register map */
     Arch2PhysMap map;
+    Arch2RgidMap rgid_map;
   public:
     using iterator = Arch2PhysMap::iterator;
     using const_iterator = Arch2PhysMap::const_iterator;
@@ -125,6 +127,13 @@ class SimpleRenameMap
         return map[arch_reg.index()];
     }
 
+    uint32_t
+    lookupRgid(const RegId& arch_reg) const
+    {
+        assert(arch_reg.index() <= rgid_map.size());
+        return rgid_map[arch_reg.index()];
+    }
+
     /**
      * Update rename map with a specific mapping.  Generally used to
      * roll back to old mappings on a squash.
@@ -136,6 +145,13 @@ class SimpleRenameMap
     {
         assert(arch_reg.index() <= map.size());
         map[arch_reg.index()] = phys_reg;
+    }
+
+    void
+    setRgid(const RegId& arch_reg, uint32_t rgid)
+    {
+        assert(arch_reg.index() <= rgid_map.size());
+        rgid_map[arch_reg.index()] = rgid;
     }
 
     /** Return the number of free entries on the associated free list. */
@@ -236,6 +252,20 @@ class UnifiedRenameMap
         return renameMaps[reg_class].lookup(arch_reg);
     }
 
+    uint32_t
+    lookupRgid(const RegId& arch_reg) const
+    {
+        auto reg_class = arch_reg.classValue();
+        if (reg_class == InvalidRegClass) {
+            return -1;
+        } else if (reg_class == MiscRegClass) {
+            // misc regs aren't really renamed, they keep the same
+            // mapping throughout the execution.
+            return -1;
+        }
+        return renameMaps[reg_class].lookupRgid(arch_reg);
+    }
+
     /**
      * Update rename map with a specific mapping.  Generally used to
      * roll back to old mappings on a squash.  This version takes a
@@ -258,6 +288,20 @@ class UnifiedRenameMap
         }
 
         return renameMaps[arch_reg.classValue()].setEntry(arch_reg, virt_reg);
+    }
+
+    void
+    setRgid(const RegId& arch_reg, int rgid)
+    {
+        if (!arch_reg.isRenameable()) {
+            // Misc registers do not actually rename, so don't change
+            // their mappings.  We end up here when a commit or squash
+            // tries to update or undo a hardwired misc reg nmapping,
+            // which should always be setting it to what it already is.
+            return;
+        }
+
+        return renameMaps[arch_reg.classValue()].setRgid(arch_reg, rgid);
     }
 
     /**

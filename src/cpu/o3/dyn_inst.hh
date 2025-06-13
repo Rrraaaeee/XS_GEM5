@@ -336,9 +336,10 @@ class DynInst : public ExecContext, public RefCounted
     }
 
     void
-    renamedSrcIdx(int idx, VirtRegId phys_reg_id)
+    renamedSrcIdx(int idx, VirtRegId phys_reg_id, int rgid)
     {
         _srcIdx[idx] = phys_reg_id;
+        src_rgids[idx] = rgid;
     }
 
     // after dispatch, it's status was speculative
@@ -429,6 +430,17 @@ class DynInst : public ExecContext, public RefCounted
 
     IssueQue* issueQue = nullptr;
     int issueportid = -1;
+
+    /*=================*/
+    /*  RCVG BEGIN     */
+    /*=================*/
+
+    int src_rgids[2];
+    int dst_rgids[1];
+
+    /*=================*/
+    /*  RCVG END       */
+    /*=================*/
 
   public:
     /** Records changes to result? */
@@ -548,12 +560,13 @@ class DynInst : public ExecContext, public RefCounted
      */
     void
     renameDestReg(int idx, VirtRegId renamed_dest,
-                  VirtRegId previous_rename)
+                  VirtRegId previous_rename, int rgid)
     {
         renamedDestIdx(idx, renamed_dest);
         prevDestIdx(idx, previous_rename);
         if (renamed_dest.PhyReg()->isPinned())
             setPinnedRegsRenamed();
+        dst_rgids[idx] = rgid;
     }
 
     /** Renames a source logical register to the physical register which
@@ -561,9 +574,9 @@ class DynInst : public ExecContext, public RefCounted
      *  @todo: add in whether or not the source register is ready.
      */
     void
-    renameSrcReg(int idx, VirtRegId renamed_src)
+    renameSrcReg(int idx, VirtRegId renamed_src, int rgid)
     {
-        renamedSrcIdx(idx, renamed_src);
+        renamedSrcIdx(idx, renamed_src, rgid);
     }
 
     /** Dumps out contents of this BaseDynInst. */

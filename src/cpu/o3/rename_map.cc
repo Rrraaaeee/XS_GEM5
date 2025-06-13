@@ -66,6 +66,7 @@ SimpleRenameMap::init(const RegClass &reg_class, SimpleFreeList *_freeList)
     assert(map.empty());
 
     map.resize(reg_class.numRegs());
+    rgid_map.resize(reg_class.numRegs(),0);
     freeList = _freeList;
 }
 

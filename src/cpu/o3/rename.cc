@@ -1284,13 +1284,15 @@ Rename::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
             panic("Invalid register class: %d.", src_reg.classValue());
         }
 
+        int rgid = map->lookupRgid(src_reg);
+
         DPRINTF(Rename,
                 "[tid:%i] "
                 "Looking up %s arch reg x%i, got %s\n",
                 tid, src_reg.className(), src_reg.index(),
                 renamed_reg.toString());
 
-        inst->renameSrcReg(src_idx, renamed_reg);
+        inst->renameSrcReg(src_idx, renamed_reg, rgid);
 
         // See if the register is ready or not.
         if (scoreboard->getReg(renamed_reg.PhyReg())) {
@@ -1364,7 +1366,14 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
             }
         }
 
+        // get new rgid
+        int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
+        int old_rgid = map->lookupRgid(dest_reg);
+        int rgid = squash_ctx.rgid_pool[flat_reg_idx];
+        squash_ctx.rgid_pool[flat_reg_idx] ++;
+
         rename_result = map->rename(flat_dest_regid, bypass_reg);
+        map->setRgid(flat_dest_regid, rgid);
 
         inst->flattenedDestIdx(dest_idx, flat_dest_regid);
 
@@ -1397,7 +1406,7 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         // (rename_result.second).
         inst->renameDestReg(dest_idx,
                             rename_result.first,
-                            rename_result.second);
+                            rename_result.second, rgid);
 
         ++stats.renamedOperands;
     }
@@ -1773,13 +1782,22 @@ Rename::notify(DynInstPtr inst)
 
 void Rename::SquashStream::accept(DynInstPtr inst)
 {
-     // for simplicity, assume wqp and sql both use inst granularity
+    // for simplicity, assume wqp and sql both use inst granularity
     assert(wpq.size()==sql.size());
 
-    wpq.push_front({.seqNum=inst->seqNum,
-                      .pc    =inst->pcState().instAddr()});
-    sql.push_front({.vld=inst->isExecuted()});
+    ReuseInfo reuse_info;
+    reuse_info.vld = inst->isExecuted();
+    for (int i = 0 ; i < inst->numSrcRegs(); i++) {
+        reuse_info.src_rgids[i] = inst->src_rgids[i];
+    }
+    for (int i = 0 ; i < inst->numDestRegs(); i++) {
+        reuse_info.dst_rgids[i] = inst->dst_rgids[i];
+    }
 
+    wpq.push_front({.seqNum=inst->seqNum,
+                       .pc    =inst->pcState().instAddr()});
+
+    sql.push_front(reuse_info);
 }
 
 bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)

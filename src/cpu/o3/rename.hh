@@ -598,7 +598,8 @@ public:
 
         // actual hardware
         bool vld;            // is executed
-                             // ....
+        int src_rgids[2];
+        int dst_rgids[1];
 
     };
 

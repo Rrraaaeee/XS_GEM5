@@ -437,7 +437,7 @@ void DynInst::buildStoreAddrUop()
 
     // mark addr ready
     if (!this->readySrcIdx(1)) this->markSrcRegReady(1);
-    this->renameSrcReg(1, VirtRegId(UnifiedRenameMap::getInvalid()));
+    this->renameSrcReg(1, VirtRegId(UnifiedRenameMap::getInvalid()), -1);
 }
 
 DynInstPtr DynInst::createStoreDataUop()
@@ -450,7 +450,7 @@ DynInstPtr DynInst::createStoreDataUop()
     DynInstPtr stduop = new (arrays) DynInst(arrays, stdinst, macroop, this->seqNum, cpu);
 
     stduop->thread = this->thread;
-    stduop->renameSrcReg(0, this->extRenamedSrcIdx(1));
+    stduop->renameSrcReg(0, this->extRenamedSrcIdx(1), -1);
 
     if (this->readySrcIdx(1)) {
         stduop->markSrcRegReady(0);
