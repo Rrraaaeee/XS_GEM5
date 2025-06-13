@@ -96,7 +96,7 @@ Rename::Rename(CPU *_cpu, const BaseO3CPUParams &params)
     /*      RCVG       */
     /*=================*/
 
-    squash_ctx.regStats(&stats);
+    squash_ctx.regRename(this);
     squash_ctx.reset(NUM_STREAMS, SIZ_STREAM);
 }
 
@@ -1810,7 +1810,7 @@ bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)
         if (found) {
             rpt = i;
             state = (state==SQUASHING) ? CONCURRENT : RCVG;
-            stats->rcvgFound ++;
+            rename->stats.rcvgFound ++;
             return true;
         }
     }
@@ -1825,8 +1825,8 @@ bool Rename::SquashReuseCtx::try_find_dvrg(const DynInstPtr& inst)
     bool found = curr_stream.try_find_dvrg(inst);
     if (found) {
         state = (state==CONCURRENT) ? SQUASHING : IDLE;
-        stats->rcvgPreLen.sample(curr_stream.pre_rcvg_len);
-        stats->rcvgPosLen.sample(curr_stream.pos_rcvg_len);
+        rename->stats.rcvgPreLen.sample(curr_stream.pre_rcvg_len);
+        rename->stats.rcvgPosLen.sample(curr_stream.pos_rcvg_len);
 
         assert(curr_stream.pre_rcvg_len <= siz_stream);
         assert(curr_stream.pos_rcvg_len <= siz_stream);

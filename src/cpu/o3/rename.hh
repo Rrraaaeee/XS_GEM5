@@ -643,7 +643,7 @@ public:
         // ctx info, simulation only
         int num_streams;
         int siz_stream;
-        RenameStats* stats;
+        Rename* rename;
 
         // actual hardware
         int wpt;
@@ -652,8 +652,8 @@ public:
         std::vector<SquashStream> squash_streams;
         int rgid_pool[64]; // one global ctr for each arch reg
 
-        void regStats(RenameStats* _stats) {
-            stats = _stats;
+        void regRename(Rename* _rename) {
+            rename = _rename;
         }
 
         void reset(int _num_streams, int _siz_stream) {
