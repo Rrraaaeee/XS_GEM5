@@ -1177,6 +1177,7 @@ Rename::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
             // Tell the rename map to set the architected register to the
             // previous physical register that it was renamed to.
             renameMap[tid]->setEntry(hb_it->archReg, hb_it->prevPhysReg);
+            renameMap[tid]->setRgid(hb_it->archReg, hb_it->oldRgid);
             if (hb_it->newPhysReg.PhyReg() != hb_it->prevPhysReg.PhyReg()) {
                 tryFreePReg(hb_it->newPhysReg.PhyReg());
             }
@@ -1390,7 +1391,7 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         // Record the rename information so that a history can be kept.
         RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
                                rename_result.first,
-                               rename_result.second);
+                               rename_result.second, old_rgid);
 
         historyBuffer[tid].push_front(hb_entry);
 

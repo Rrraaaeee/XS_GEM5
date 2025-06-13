@@ -314,9 +314,10 @@ class Rename : public ProbeListener
     {
         RenameHistory(InstSeqNum _instSeqNum, const RegId& _archReg,
                       VirtRegId _newPhysReg,
-                      VirtRegId _prevPhysReg)
+                      VirtRegId _prevPhysReg, int _old_rgid)
             : instSeqNum(_instSeqNum), archReg(_archReg),
-              newPhysReg(_newPhysReg), prevPhysReg(_prevPhysReg)
+              newPhysReg(_newPhysReg), prevPhysReg(_prevPhysReg),
+              oldRgid(_old_rgid)
         {
         }
 
@@ -326,9 +327,10 @@ class Rename : public ProbeListener
         RegId archReg;
         /** The new physical register that the arch. register is renamed to. */
         VirtRegId newPhysReg;
-        /** The old physical register that the arch. register was renamed to.
-         */
+        /** The old physical register that the arch. register was renamed to. */
         VirtRegId prevPhysReg;
+        /** old destination rgid to recover to */
+        int oldRgid;
     };
 
     /** A per-thread list of all destination register renames, used to either
