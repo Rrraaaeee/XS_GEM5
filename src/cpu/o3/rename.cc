@@ -902,7 +902,16 @@ Rename::renameInsts(ThreadID tid)
         }
 
         if (squash_ctx.state==RCVG || squash_ctx.state==CONCURRENT) {
-            // We are in RCVG mode, detect if we have divergence and advance
+            bool can_reuse = squash_ctx.try_reuse(inst);
+            if (can_reuse && !inst->isControl() && !inst->isMemRef()) {
+                // std::string dasm;
+                // inst->dump(dasm);
+                // printf("Can reuse! %s\n", dasm.c_str());
+            }
+
+            // main squash reuse code here
+
+            // advance and detect if we have divergenced
             squash_ctx.try_find_dvrg(inst);
         }
 
@@ -1867,6 +1876,26 @@ bool Rename::SquashReuseCtx::try_find_dvrg(const DynInstPtr& inst)
     return false;
 }
 
+bool Rename::SquashReuseCtx::try_reuse(const DynInstPtr& inst)
+{
+    assert(state==CONCURRENT || state==RCVG);
+
+    auto& curr_stream = get_stream(rpt);
+    if (curr_stream.sql_it->vld) {
+        return false;
+    }
+
+    for (int i = 0; i < inst->numSrcRegs(); i++) {
+        int curr_rgid   = rename->renameMap[inst->threadNumber]->lookupRgid(inst->srcRegIdx(i));
+        int squash_rgid = curr_stream.sql_it->src_rgids[i];
+        if (curr_rgid != squash_rgid || curr_rgid==-1) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
 {
     assert(wpq.size() == sql.size());
@@ -1893,14 +1922,16 @@ bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
 bool Rename::SquashStream::try_find_dvrg(const DynInstPtr& inst)
 {
     pos_rcvg_len ++;
-    wpq_it ++;
-    sql_it ++;
 
     Addr pc = inst->pcState().instAddr();
     if (wpq_it == wpq.end() || wpq_it->pc != pc) {
         // either pc diverge, or end of stream
         return true;
     }
+
+    wpq_it ++;
+    sql_it ++;
+
     return false;
 }
 

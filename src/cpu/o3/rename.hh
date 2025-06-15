@@ -693,6 +693,7 @@ public:
 
         bool try_find_rcvg(const DynInstPtr& inst);
         bool try_find_dvrg(const DynInstPtr& inst);
+        bool try_reuse(const DynInstPtr& inst);
     };
 
 
