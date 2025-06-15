@@ -1367,16 +1367,35 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
             }
         }
 
-        // get new rgid
-        int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
-        int old_rgid = map->lookupRgid(dest_reg);
-        int rgid = squash_ctx.rgid_pool[flat_reg_idx];
-        squash_ctx.rgid_pool[flat_reg_idx] ++;
-
         rename_result = map->rename(flat_dest_regid, bypass_reg);
-        map->setRgid(flat_dest_regid, rgid);
 
         inst->flattenedDestIdx(dest_idx, flat_dest_regid);
+
+        /*=================*/
+        /*  RCVG BEGIN     */
+        /*=================*/
+
+        // get new rgid
+        int old_rgid = -1;
+        int rgid = -1;
+        int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
+
+        // std::string str;
+        // inst->dump(str);
+        // printf("%s %lx %d\n", str.c_str(), inst->pcState().instAddr(), flat_reg_idx);
+
+        if (flat_dest_regid.isRenameable() && flat_dest_regid.classValue()==IntRegClass &&
+            flat_dest_regid.classValue()==FloatRegClass) {
+            assert(flat_reg_idx >=0 && flat_reg_idx <64);
+            old_rgid = map->lookupRgid(dest_reg);
+            rgid = squash_ctx.rgid_pool[flat_reg_idx];
+            squash_ctx.rgid_pool[flat_reg_idx] ++;
+        }
+        map->setRgid(flat_dest_regid, rgid);
+
+        /*=================*/
+        /*  RCVG END       */
+        /*=================*/
 
         if (!inc_ref_of_last_dest_phy_reg) {
             scoreboard->unsetReg(rename_result.first.PhyReg());
@@ -1788,6 +1807,14 @@ void Rename::SquashStream::accept(DynInstPtr inst)
 
     ReuseInfo reuse_info;
     reuse_info.vld = inst->isExecuted();
+
+    // if (inst->numSrcRegs() > 2) {
+        // std::string str;
+        // inst->dump(str);
+        // printf("%s\n", str.c_str());
+    // }
+    assert(inst->numSrcRegs()  <= 3);
+    assert(inst->numDestRegs() <= 1);
     for (int i = 0 ; i < inst->numSrcRegs(); i++) {
         reuse_info.src_rgids[i] = inst->src_rgids[i];
     }
@@ -1861,17 +1888,19 @@ bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
     return false;
 }
 
+
+
 bool Rename::SquashStream::try_find_dvrg(const DynInstPtr& inst)
 {
+    pos_rcvg_len ++;
+    wpq_it ++;
+    sql_it ++;
+
     Addr pc = inst->pcState().instAddr();
     if (wpq_it == wpq.end() || wpq_it->pc != pc) {
         // either pc diverge, or end of stream
         return true;
     }
-
-    pos_rcvg_len ++;
-    wpq_it ++;
-    sql_it ++;
     return false;
 }
 

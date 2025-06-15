@@ -339,7 +339,9 @@ class DynInst : public ExecContext, public RefCounted
     renamedSrcIdx(int idx, VirtRegId phys_reg_id, int rgid)
     {
         _srcIdx[idx] = phys_reg_id;
-        src_rgids[idx] = rgid;
+
+        if (idx<3)
+            src_rgids[idx] = rgid;
     }
 
     // after dispatch, it's status was speculative
@@ -435,7 +437,7 @@ class DynInst : public ExecContext, public RefCounted
     /*  RCVG BEGIN     */
     /*=================*/
 
-    int src_rgids[2];
+    int src_rgids[3];
     int dst_rgids[1];
 
     /*=================*/
@@ -566,7 +568,9 @@ class DynInst : public ExecContext, public RefCounted
         prevDestIdx(idx, previous_rename);
         if (renamed_dest.PhyReg()->isPinned())
             setPinnedRegsRenamed();
-        dst_rgids[idx] = rgid;
+
+        if (idx==0)
+            dst_rgids[idx] = rgid;
     }
 
     /** Renames a source logical register to the physical register which
