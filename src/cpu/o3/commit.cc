@@ -258,7 +258,9 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
       ADD_STAT(rcvgCommitSuccess, statistics::units::Count::get(),
                "Total number of successful reuse"),
       ADD_STAT(rcvgCommitFail, statistics::units::Count::get(),
-               "Total number of failed reuse")
+               "Total number of failed reuse"),
+      ADD_STAT(rcvgSuccessNumSrcReg, statistics::units::Count::get(),
+               "The successful reuse inst is an N source register inst")
 {
     using namespace statistics;
 
@@ -338,6 +340,12 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
 
     totalSquash = squashDueToBranch + squashDueToOrderViolation + \
         squashDueToTrap + squashDueToTC + squashDueToSquashAfter;
+
+    rcvgSuccessNumSrcReg
+        .init(/* base value */ 0,
+              /* last value */ 4,
+              /* bucket size */ 1)
+        .flags(statistics::pdf);
 }
 
 void
@@ -1203,7 +1211,6 @@ Commit::commitInsts()
                             printf("%s Fail! expect %lx real %lx\n", str.c_str(), head_inst->dst_reg_vals[0] ,
                                                                                           head_inst->reuse_dst_reg_vals[0]);
                             success = false;
-                            break;
                         }
                     }
                     if (success) {
@@ -1211,6 +1218,7 @@ Commit::commitInsts()
                         // head_inst->dump(str);
                         // printf("%s rcvg sucess!\n",str.c_str());
                         stats.rcvgCommitSuccess++;
+                        stats.rcvgSuccessNumSrcReg.sample(head_inst->numSrcRegs());
                     } else {
                         stats.rcvgCommitFail++;
                     }

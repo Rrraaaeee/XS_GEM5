@@ -569,6 +569,7 @@ class Commit
 
         statistics::Scalar rcvgCommitSuccess;
         statistics::Scalar rcvgCommitFail;
+        statistics::Distribution rcvgSuccessNumSrcReg;
     } stats;
 
     bool ismispred = false;
