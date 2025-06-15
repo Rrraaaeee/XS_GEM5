@@ -254,7 +254,11 @@ Commit::CommitStats::CommitStats(CPU *cpu, Commit *commit)
       ADD_STAT(squashDueToSquashAfter, statistics::units::Count::get(),
                "Number of squash due to squash after"),
       ADD_STAT(totalSquash, statistics::units::Count::get(),
-               "Total number of squash")
+               "Total number of squash"),
+      ADD_STAT(rcvgCommitSuccess, statistics::units::Count::get(),
+               "Total number of successful reuse"),
+      ADD_STAT(rcvgCommitFail, statistics::units::Count::get(),
+               "Total number of failed reuse")
 {
     using namespace statistics;
 
@@ -1176,6 +1180,46 @@ Commit::commitInsts()
             bool commit_success = commitHead(head_inst, num_committed);
 
             if (commit_success) {
+        /*=================*/
+        /*  RCVG BEGIN     */
+        /*=================*/
+                if (head_inst->rcvgValid()) {
+                    bool success = true;
+                    for (int i = 0 ; i < head_inst->numSrcRegs(); i++) {
+                        if (head_inst->src_reg_vals[i] != head_inst->reuse_src_reg_vals[i]) {
+                            std::string  str;
+                            head_inst->dump(str);
+                            printf("%s Fail! expect %lx real %lx\n", str.c_str(), head_inst->src_reg_vals[i] ,
+                                                                                          head_inst->reuse_src_reg_vals[i]);
+                            success = false;
+                            break;
+                        }
+                    }
+
+                    if (head_inst->numDestRegs() > 0) {
+                        if (head_inst->dst_reg_vals[0] != head_inst->reuse_dst_reg_vals[0]) {
+                            std::string  str;
+                            head_inst->dump(str);
+                            printf("%s Fail! expect %lx real %lx\n", str.c_str(), head_inst->dst_reg_vals[0] ,
+                                                                                          head_inst->reuse_dst_reg_vals[0]);
+                            success = false;
+                            break;
+                        }
+                    }
+                    if (success) {
+                        // std::string str;
+                        // head_inst->dump(str);
+                        // printf("%s rcvg sucess!\n",str.c_str());
+                        stats.rcvgCommitSuccess++;
+                    } else {
+                        stats.rcvgCommitFail++;
+                    }
+            }
+        /*=================*/
+        /*  RCVG END       */
+        /*=================*/
+
+
                 cpu->perfCCT->updateInstPos(head_inst->seqNum, PerfRecord::AtCommit);
                 cpu->perfCCT->commitMeta(head_inst->seqNum);
                 head_inst->printDisassemblyAndResult(cpu->name());

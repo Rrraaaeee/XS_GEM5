@@ -597,7 +597,10 @@ public:
     };
 
     struct ReuseInfo {
-        // for assertion
+        // for function assertion
+        Addr pc;
+        uint64_t src_reg_vals[3];
+        uint64_t dst_reg_vals[1];
 
         // actual hardware
         bool vld;            // is executed
@@ -630,8 +633,10 @@ public:
         }
 
         void accept(DynInstPtr inst);
+        const ReuseInfo& getReuseInfo();
         bool try_find_rcvg(const DynInstPtr& inst);
         bool try_find_dvrg(const DynInstPtr& inst);
+        void advance();
     };
 
     enum SquashReuseCtxState {
@@ -683,6 +688,11 @@ public:
         SquashStream& get_stream_write() {
             return squash_streams[wpt];
         }
+
+        SquashStream& get_stream_read() {
+            return squash_streams[rpt];
+        }
+
 
         SquashStream& get_stream(int i) {
             return squash_streams[i];

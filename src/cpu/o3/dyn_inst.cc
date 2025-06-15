@@ -378,6 +378,13 @@ DynInst::execute()
 
     fault = staticInst->execute(this, traceData);
 
+    for (int i = 0 ; i < numSrcRegs(); i++) {
+        src_reg_vals[i] = getRegOperand(&(*staticInst), i);
+    }
+
+    if (numDestRegs() > 0)
+        dst_reg_vals[0] = getDestRegOperand(&(*staticInst), 0);
+
     thread->noSquashFromTC = no_squash_from_TC;
 
     return fault;

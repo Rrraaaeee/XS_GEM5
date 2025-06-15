@@ -566,6 +566,9 @@ class Commit
         statistics::Scalar squashDueToTC;
         statistics::Scalar squashDueToSquashAfter;
         statistics::Formula totalSquash;
+
+        statistics::Scalar rcvgCommitSuccess;
+        statistics::Scalar rcvgCommitFail;
     } stats;
 
     bool ismispred = false;

@@ -213,6 +213,7 @@ class DynInst : public ExecContext, public RefCounted
         HtmFromTransaction,
         IsEmptyMov,
         IsConstantFolded,
+        Rcvg,
         MaxFlags
     };
 
@@ -437,6 +438,10 @@ class DynInst : public ExecContext, public RefCounted
     /*  RCVG BEGIN     */
     /*=================*/
 
+    uint64_t src_reg_vals[3];
+    uint64_t dst_reg_vals[1];
+    uint64_t reuse_src_reg_vals[3];
+    uint64_t reuse_dst_reg_vals[1];
     int src_rgids[3];
     int dst_rgids[1];
 
@@ -466,6 +471,9 @@ class DynInst : public ExecContext, public RefCounted
     void setEmptyMov() { instFlags[IsEmptyMov] = true; }
 
     void setConstantFolded() { instFlags[IsConstantFolded] = true; }
+
+    bool rcvgValid() const { return instFlags[Rcvg]; }
+    void rcvgValid(bool b) { instFlags[Rcvg] = b; }
 
     ////////////////////////////////////////////
     //
@@ -1312,6 +1320,15 @@ class DynInst : public ExecContext, public RefCounted
         if (reg.PhyReg()->is(InvalidRegClass))
             return;
         cpu->getReg(reg.PhyReg(), val);
+    }
+
+    RegVal
+    getDestRegOperand(const StaticInst *si, int idx)
+    {
+        const PhysRegIdPtr reg = renamedDestIdx(idx);
+        if (reg->is(InvalidRegClass))
+            return 0;
+        return cpu->getReg(reg);
     }
 
     void *

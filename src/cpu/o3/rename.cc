@@ -911,17 +911,30 @@ Rename::renameInsts(ThreadID tid)
         }
 
         if (squash_ctx.state==RCVG || squash_ctx.state==CONCURRENT) {
+            // advance and detect if we have divergenced
+            squash_ctx.try_find_dvrg(inst);
+        }
+
+        if (squash_ctx.state==RCVG || squash_ctx.state==CONCURRENT) {
             bool can_reuse = squash_ctx.try_reuse(inst);
-            if (can_reuse && !inst->isControl() && !inst->isMemRef()) {
+            if (can_reuse) {
+                // main squash reuse code here
                 // std::string dasm;
                 // inst->dump(dasm);
                 // printf("Can reuse! %s\n", dasm.c_str());
+                const auto& reuse_info = squash_ctx.get_stream_read().getReuseInfo();
+                assert(reuse_info.pc == inst->pcState().instAddr());
+
+                for (int i = 0 ; i < inst->numSrcRegs(); i++) {
+                    inst->reuse_src_reg_vals[i] = reuse_info.src_reg_vals[i];
+                }
+
+                if (inst->numDestRegs() > 0)
+                    inst->reuse_dst_reg_vals[0] = reuse_info.dst_reg_vals[0];
+
+                inst->rcvgValid(true);
             }
-
-            // main squash reuse code here
-
-            // advance and detect if we have divergenced
-            squash_ctx.try_find_dvrg(inst);
+            squash_ctx.get_stream_read().advance();
         }
 
 
@@ -1826,15 +1839,26 @@ void Rename::SquashStream::accept(DynInstPtr inst)
     assert(inst->numDestRegs() <= 1);
     for (int i = 0 ; i < inst->numSrcRegs(); i++) {
         reuse_info.src_rgids[i] = inst->src_rgids[i];
+        reuse_info.src_reg_vals[i] = inst->src_reg_vals[i];
     }
-    for (int i = 0 ; i < inst->numDestRegs(); i++) {
-        reuse_info.dst_rgids[i] = inst->dst_rgids[i];
+
+    if (inst->numDestRegs() > 0) {
+        reuse_info.dst_rgids[0] = inst->dst_rgids[0];
+        reuse_info.dst_reg_vals[0] = inst->dst_reg_vals[0];
     }
+
+    reuse_info.pc  = inst->pcState().instAddr();
 
     wpq.push_front({.seqNum=inst->seqNum,
                        .pc    =inst->pcState().instAddr()});
 
     sql.push_front(reuse_info);
+}
+
+const Rename::ReuseInfo&
+Rename::SquashStream::getReuseInfo()
+{
+    return *sql_it;
 }
 
 bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)
@@ -1883,8 +1907,12 @@ bool Rename::SquashReuseCtx::try_reuse(const DynInstPtr& inst)
 {
     assert(state==CONCURRENT || state==RCVG);
 
+    if (inst->isControl() || inst->isMemRef() || inst->staticInst->isVectorConfig()) {
+        return false;
+    }
+
     auto& curr_stream = get_stream(rpt);
-    if (curr_stream.sql_it->vld) {
+    if (!curr_stream.sql_it->vld) {
         return false;
     }
 
@@ -1907,9 +1935,13 @@ bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
     sql_it = sql.begin();
     Addr pc = inst->pcState().instAddr();
     while (wpq_it != wpq.end()) {
+
+        assert(sql_it->pc == wpq_it->pc);
+
         if (wpq_it->pc == pc) {
             return true;
         }
+
         wpq_it ++;
         sql_it ++;
         pre_rcvg_len ++;
@@ -1925,17 +1957,30 @@ bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
 bool Rename::SquashStream::try_find_dvrg(const DynInstPtr& inst)
 {
     Addr pc = inst->pcState().instAddr();
+
     if (wpq_it == wpq.end() || wpq_it->pc != pc) {
         // either pc diverge, or end of stream
         return true;
     }
 
+    assert(sql_it->pc == wpq_it->pc);
+
+    return false;
+}
+
+void Rename::SquashStream::advance()
+{
     pos_rcvg_len ++;
     wpq_it ++;
     sql_it ++;
 
-    return false;
+    if (wpq_it == wpq.end()) {
+        assert(sql_it == sql.end());
+    } else {
+        assert(sql_it->pc == wpq_it->pc);
+    }
 }
+
 
 } // namespace o3
 } // namespace gem5
