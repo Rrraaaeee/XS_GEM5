@@ -167,7 +167,9 @@ Rename::RenameStats::RenameStats(statistics::Group *parent)
       ADD_STAT(rcvgPreLen, statistics::units::Count::get(),
                "Distribution of rcvg pre len"),
       ADD_STAT(rcvgPosLen, statistics::units::Count::get(),
-               "Distribution of rcvg post len")
+               "Distribution of rcvg post len"),
+      ADD_STAT(rcvgStreamDist, statistics::units::Count::get(),
+               "Distribution of squash stream distance from current stream")
 {
     squashCycles.prereq(squashCycles);
     idleCycles.prereq(idleCycles);
@@ -227,6 +229,13 @@ Rename::RenameStats::RenameStats(statistics::Group *parent)
               /* last value */ 256,
               /* bucket size */ 1)
         .flags(statistics::pdf);
+
+    rcvgStreamDist
+        .init(/* base value */ 0,
+              /* last value */ 8,
+              /* bucket size */ 1)
+        .flags(statistics::pdf);
+
 }
 
 void
@@ -1847,6 +1856,9 @@ bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)
         if (found) {
             rpt = i;
             state = (state==SQUASHING) ? CONCURRENT : RCVG;
+
+            int stream_dist = wpt > rpt ? wpt - rpt : wpt + num_streams - rpt;
+            rename->stats.rcvgStreamDist.sample(stream_dist);
             rename->stats.rcvgFound ++;
             return true;
         }

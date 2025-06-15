@@ -566,6 +566,7 @@ class Rename : public ProbeListener
         statistics::Scalar rcvgFound;
         statistics::Distribution rcvgPreLen;
         statistics::Distribution rcvgPosLen;
+        statistics::Distribution rcvgStreamDist;
     } stats;
 
     std::vector<StallReason> renameStalls;
