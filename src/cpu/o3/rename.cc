@@ -1398,10 +1398,6 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         int rgid = -1;
         int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
 
-        // std::string str;
-        // inst->dump(str);
-        // printf("%s %lx %d\n", str.c_str(), inst->pcState().instAddr(), flat_reg_idx);
-
         if (flat_dest_regid.isRenameable() && flat_dest_regid.classValue()==IntRegClass &&
             flat_dest_regid.classValue()==FloatRegClass) {
             assert(flat_reg_idx >=0 && flat_reg_idx <64);
@@ -1826,11 +1822,6 @@ void Rename::SquashStream::accept(DynInstPtr inst)
     ReuseInfo reuse_info;
     reuse_info.vld = inst->isExecuted();
 
-    // if (inst->numSrcRegs() > 2) {
-        // std::string str;
-        // inst->dump(str);
-        // printf("%s\n", str.c_str());
-    // }
     assert(inst->numSrcRegs()  <= 3);
     assert(inst->numDestRegs() <= 1);
     for (int i = 0 ; i < inst->numSrcRegs(); i++) {
@@ -1933,14 +1924,13 @@ bool Rename::SquashStream::try_find_rcvg(const DynInstPtr& inst)
 
 bool Rename::SquashStream::try_find_dvrg(const DynInstPtr& inst)
 {
-    pos_rcvg_len ++;
-
     Addr pc = inst->pcState().instAddr();
     if (wpq_it == wpq.end() || wpq_it->pc != pc) {
         // either pc diverge, or end of stream
         return true;
     }
 
+    pos_rcvg_len ++;
     wpq_it ++;
     sql_it ++;
 
