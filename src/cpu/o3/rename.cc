@@ -169,7 +169,13 @@ Rename::RenameStats::RenameStats(statistics::Group *parent)
       ADD_STAT(rcvgPosLen, statistics::units::Count::get(),
                "Distribution of rcvg post len"),
       ADD_STAT(rcvgStreamDist, statistics::units::Count::get(),
-               "Distribution of squash stream distance from current stream")
+               "Distribution of squash stream distance from current stream"),
+      ADD_STAT(rcvgReusePerStream, statistics::units::Count::get(),
+               "Distribution of squash reuse per stream"),
+      ADD_STAT(rcvgReuseCntFromSingle, statistics::units::Count::get(),
+               "Total number of reuse from single stream"),
+      ADD_STAT(rcvgReuseCntFromMulti, statistics::units::Count::get(),
+               "Total number of reuse from multi stream")
 {
     squashCycles.prereq(squashCycles);
     idleCycles.prereq(idleCycles);
@@ -233,6 +239,12 @@ Rename::RenameStats::RenameStats(statistics::Group *parent)
     rcvgStreamDist
         .init(/* base value */ 0,
               /* last value */ 8,
+              /* bucket size */ 1)
+        .flags(statistics::pdf);
+
+    rcvgReusePerStream
+        .init(/* base value */ 0,
+              /* last value */ 256,
               /* bucket size */ 1)
         .flags(statistics::pdf);
 
@@ -941,6 +953,7 @@ Rename::renameInsts(ThreadID tid)
                 }
 
                 inst->rcvgValid(true);
+                squash_ctx.get_stream_read().reuse_cnt ++;
             }
             squash_ctx.get_stream_read().advance();
         }
@@ -1897,6 +1910,8 @@ bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)
             int stream_dist = wpt > rpt ? wpt - rpt : wpt + num_streams - rpt;
             rename->stats.rcvgStreamDist.sample(stream_dist);
             rename->stats.rcvgFound ++;
+            get_stream(i).rcvg_dist = stream_dist;
+
             return true;
         }
     }
@@ -1911,8 +1926,14 @@ bool Rename::SquashReuseCtx::try_find_dvrg(const DynInstPtr& inst)
     bool found = curr_stream.try_find_dvrg(inst);
     if (found) {
         state = (state==CONCURRENT) ? SQUASHING : IDLE;
+
         rename->stats.rcvgPreLen.sample(curr_stream.pre_rcvg_len);
         rename->stats.rcvgPosLen.sample(curr_stream.pos_rcvg_len);
+        rename->stats.rcvgReusePerStream.sample(curr_stream.reuse_cnt);
+        if (curr_stream.rcvg_dist == 1)
+            rename->stats.rcvgReuseCntFromSingle += curr_stream.reuse_cnt;
+        else
+            rename->stats.rcvgReuseCntFromMulti += curr_stream.reuse_cnt;
 
         assert(curr_stream.pre_rcvg_len <= siz_stream);
         assert(curr_stream.pos_rcvg_len <= siz_stream);

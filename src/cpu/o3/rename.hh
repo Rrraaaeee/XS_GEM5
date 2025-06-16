@@ -567,6 +567,9 @@ class Rename : public ProbeListener
         statistics::Distribution rcvgPreLen;
         statistics::Distribution rcvgPosLen;
         statistics::Distribution rcvgStreamDist;
+        statistics::Distribution rcvgReusePerStream;
+        statistics::Scalar rcvgReuseCntFromSingle;
+        statistics::Scalar rcvgReuseCntFromMulti;
     } stats;
 
     std::vector<StallReason> renameStalls;
@@ -613,6 +616,8 @@ public:
         // for simulation only
         int pre_rcvg_len;
         int pos_rcvg_len;
+        int reuse_cnt;
+        int rcvg_dist;
 
         // Wrong path queue, for storing inst sequence
         std::deque<InstInfo> wpq;
@@ -630,6 +635,8 @@ public:
             sql_it = sql.begin();
             pre_rcvg_len = 0;
             pos_rcvg_len = 0;
+            reuse_cnt = 0;
+            rcvg_dist = false;
         }
 
         void accept(DynInstPtr inst);
