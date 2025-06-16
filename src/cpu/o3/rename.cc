@@ -925,11 +925,17 @@ Rename::renameInsts(ThreadID tid)
                 // record reuse values for function verification
                 assert(inst->numSrcRegs() <= 3);
                 for (int i = 0 ; i < inst->numSrcRegs(); i++) {
+                    // printf("Inst %ld pc %lx reuse src %d val %ld from %ld\n",
+                            // inst->seqNum, inst->pcState().instAddr(), i, reuse_info.src_reg_vals[i],
+                            // squash_ctx.get_stream_read().wpq_it->seqNum);
                     inst->reuse_src_reg_vals[i] = reuse_info.src_reg_vals[i];
                     inst->src_rgids[i] = reuse_info.src_rgids[i];
                 }
 
                 if (inst->numDestRegs() > 0) {
+                    // printf("Inst %ld pc %lx reuse dst %d val %ld from %ld\n",
+                            // inst->seqNum, inst->pcState().instAddr(), 0, reuse_info.dst_reg_vals[0],
+                            // squash_ctx.get_stream_read().wpq_it->seqNum);
                     inst->reuse_dst_reg_vals[0] = reuse_info.dst_reg_vals[0];
                     inst->dst_rgids[0] = reuse_info.dst_rgids[0];
                 }
@@ -938,9 +944,6 @@ Rename::renameInsts(ThreadID tid)
             }
             squash_ctx.get_stream_read().advance();
         }
-
-        //TODO: Perform reuse
-
 
         /*=================*/
         /*  RCVG END       */
@@ -1928,7 +1931,8 @@ bool Rename::SquashReuseCtx::try_reuse(const DynInstPtr& inst)
 {
     assert(state==CONCURRENT || state==RCVG);
 
-    if (inst->isControl() || inst->isMemRef() || inst->staticInst->isVectorConfig()) {
+    if (inst->isControl() || (inst->isMemRef() && !inst->isLoad()) || inst->staticInst->isVectorConfig()) {
+    // if (inst->isControl() || (inst->isMemRef()) || inst->staticInst->isVectorConfig()) {
         return false;
     }
 

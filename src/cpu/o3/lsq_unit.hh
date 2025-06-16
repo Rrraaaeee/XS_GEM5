@@ -361,7 +361,7 @@ class LSQUnit
      * @param inst the instruction to check
      */
     Fault checkViolations(typename LoadQueue::iterator& loadIt,
-            const DynInstPtr& inst);
+            const DynInstPtr& inst, bool rcvg_check_data=false);
 
     /** A load replay helper function
      * this function will clear state of inst (the original request, tlb state etc)

@@ -936,8 +936,34 @@ LSQUnit::skipNukeReplay(const DynInstPtr& load_inst)
 
 Fault
 LSQUnit::checkViolations(typename LoadQueue::iterator& loadIt,
-        const DynInstPtr& inst)
+        const DynInstPtr& inst, bool rcvg_check_data)
 {
+
+    /*=================*/
+    /*  RCVG BEGIN     */
+    /*=================*/
+    // load re-execution compare result
+    if (rcvg_check_data) {
+        assert(inst->isMemRef());
+        assert(inst->isLoad());
+        assert(inst->rcvgValid());
+        if (memDepViolator && inst->seqNum > memDepViolator->seqNum)
+            // has older violator
+            return NoFault;
+
+        if (inst->dst_reg_vals[0] != inst->reuse_dst_reg_vals[0]) {
+            memDepViolator = inst;
+            return std::make_shared<GenericISA::M5PanicFault>(
+                    "Detected RCVG fault on inst [sn:%lli]\n",
+                    inst->seqNum);
+        }
+        return NoFault;
+    }
+
+    /*=================*/
+    /*  RCVG END       */
+    /*=================*/
+
     Addr inst_eff_addr1 = inst->physEffAddr >> depCheckShift;
     Addr inst_eff_addr2 = (inst->physEffAddr + inst->effSize - 1) >> depCheckShift;
 
@@ -1354,7 +1380,11 @@ LSQUnit::loadPipeS3(const DynInstPtr &inst, std::bitset<LdStFlagNum> &flag)
     DPRINTF(LSQUnit, "LoadPipeS3: Executing load PC %s, [sn:%lli] flags: %s\n",
             inst->pcState(), inst->seqNum, getLdStFlagStr(flag));
     assert(!inst->isSquashed());
-    return fault;
+
+    if (fault==NoFault && inst->rcvgValid())
+        return checkViolations(inst->lqIt, inst, true);
+    else
+        return fault;
 }
 
 void
@@ -1397,6 +1427,7 @@ LSQUnit::executeLoadPipeSx()
                         break;
                     case 3:
                         fault = loadPipeS3(inst, flag);
+                        iewStage->SquashCheckAfterExe(inst);
                         break;
                     default:
                         panic("unsupported loadpipe length");
