@@ -1208,7 +1208,7 @@ Commit::commitInsts()
                         if (head_inst->dst_reg_vals[0] != head_inst->reuse_dst_reg_vals[0]) {
                             std::string  str;
                             head_inst->dump(str);
-                            printf("%s Fail! expect %lx real %lx\n", str.c_str(), head_inst->dst_reg_vals[0] ,
+                            printf("%ld %s Fail! expect %lx real %lx\n", head_inst->seqNum, str.c_str(), head_inst->dst_reg_vals[0] ,
                                                                                           head_inst->reuse_dst_reg_vals[0]);
                             success = false;
                         }

@@ -1835,7 +1835,7 @@ void Rename::SquashStream::accept(DynInstPtr inst)
     assert(wpq.size()==sql.size());
 
     ReuseInfo reuse_info;
-    reuse_info.vld = inst->isExecuted();
+    reuse_info.vld = !inst->notAnInst() && inst->isExecuted(); // pc alias when itlb translation fault
 
     assert(inst->numSrcRegs()  <= 5);
     assert(inst->numDestRegs() <= 1);
