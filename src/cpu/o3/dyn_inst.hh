@@ -438,11 +438,11 @@ class DynInst : public ExecContext, public RefCounted
     /*  RCVG BEGIN     */
     /*=================*/
 
-    uint64_t src_reg_vals[3];
+    uint64_t src_reg_vals[5];
     uint64_t dst_reg_vals[1];
-    uint64_t reuse_src_reg_vals[3];
+    uint64_t reuse_src_reg_vals[5];
     uint64_t reuse_dst_reg_vals[1];
-    int src_rgids[3];
+    int src_rgids[5];
     int dst_rgids[1];
 
     /*=================*/

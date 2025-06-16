@@ -599,12 +599,12 @@ public:
     struct ReuseInfo {
         // for function assertion
         Addr pc;
-        uint64_t src_reg_vals[3];
+        uint64_t src_reg_vals[5];
         uint64_t dst_reg_vals[1];
 
         // actual hardware
         bool vld;            // is executed
-        int src_rgids[3];
+        int src_rgids[5];
         int dst_rgids[1];
 
     };

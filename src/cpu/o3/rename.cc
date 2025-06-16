@@ -937,6 +937,8 @@ Rename::renameInsts(ThreadID tid)
             squash_ctx.get_stream_read().advance();
         }
 
+        //TODO: Perform reuse
+
 
         /*=================*/
         /*  RCVG END       */
@@ -1835,7 +1837,7 @@ void Rename::SquashStream::accept(DynInstPtr inst)
     ReuseInfo reuse_info;
     reuse_info.vld = inst->isExecuted();
 
-    assert(inst->numSrcRegs()  <= 3);
+    assert(inst->numSrcRegs()  <= 5);
     assert(inst->numDestRegs() <= 1);
     for (int i = 0 ; i < inst->numSrcRegs(); i++) {
         reuse_info.src_rgids[i] = inst->src_rgids[i];
