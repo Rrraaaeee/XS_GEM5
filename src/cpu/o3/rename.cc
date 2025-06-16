@@ -919,18 +919,20 @@ Rename::renameInsts(ThreadID tid)
             bool can_reuse = squash_ctx.try_reuse(inst);
             if (can_reuse) {
                 // main squash reuse code here
-                // std::string dasm;
-                // inst->dump(dasm);
-                // printf("Can reuse! %s\n", dasm.c_str());
                 const auto& reuse_info = squash_ctx.get_stream_read().getReuseInfo();
                 assert(reuse_info.pc == inst->pcState().instAddr());
 
+                // record reuse values for function verification
+                assert(inst->numSrcRegs() <= 3);
                 for (int i = 0 ; i < inst->numSrcRegs(); i++) {
                     inst->reuse_src_reg_vals[i] = reuse_info.src_reg_vals[i];
+                    inst->src_rgids[i] = reuse_info.src_rgids[i];
                 }
 
-                if (inst->numDestRegs() > 0)
+                if (inst->numDestRegs() > 0) {
                     inst->reuse_dst_reg_vals[0] = reuse_info.dst_reg_vals[0];
+                    inst->dst_rgids[0] = reuse_info.dst_rgids[0];
+                }
 
                 inst->rcvgValid(true);
             }
@@ -1319,6 +1321,12 @@ Rename::renameSrcRegs(const DynInstPtr &inst, ThreadID tid)
         }
 
         int rgid = map->lookupRgid(src_reg);
+
+        if (inst->rcvgValid()) {
+            assert(inst->src_rgids[src_idx] == rgid);
+            if (src_idx >= 3)
+                assert(rgid==-1);
+        }
 
         DPRINTF(Rename,
                 "[tid:%i] "

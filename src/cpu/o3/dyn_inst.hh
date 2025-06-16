@@ -343,6 +343,8 @@ class DynInst : public ExecContext, public RefCounted
 
         if (idx<3)
             src_rgids[idx] = rgid;
+        else
+            src_rgids[idx] = -1;
     }
 
     // after dispatch, it's status was speculative
