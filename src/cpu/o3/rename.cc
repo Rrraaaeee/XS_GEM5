@@ -1850,14 +1850,12 @@ Rename::notify(DynInstPtr inst)
 
 void Rename::SquashStream::accept(DynInstPtr inst)
 {
+
     // for simplicity, assume wqp and sql both use inst granularity
     assert(wpq.size()==sql.size());
 
     ReuseInfo reuse_info;
-    reuse_info.vld = !inst->notAnInst() && inst->isExecuted(); // pc alias when itlb translation fault
-
-    if (inst->isMemRef())
-        reuse_info.vld = reuse_info.vld && (inst->isResultReady());
+    reuse_info.vld = !inst->notAnInst() && inst->isExecuted() && inst->isResultReady(); // pc alias when itlb translation fault
 
     assert(inst->numSrcRegs()  <= 5);
     assert(inst->numDestRegs() <= 1);

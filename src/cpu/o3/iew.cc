@@ -1736,6 +1736,7 @@ IEW::executeInsts()
             }
 
             if (!inst->isSplitStoreData()) {
+                inst->setResultReady();
                 inst->setExecuted();
                 instToCommit(inst);
             } else {
