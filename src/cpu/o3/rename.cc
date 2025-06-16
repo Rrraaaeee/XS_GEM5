@@ -1417,13 +1417,19 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         /*  RCVG BEGIN     */
         /*=================*/
 
-        // get new rgid
         int old_rgid = -1;
         int rgid = -1;
-        int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
+        bool can_reuse = flat_dest_regid.isRenameable() && (flat_dest_regid.classValue()==IntRegClass ||
+                         flat_dest_regid.classValue()==FloatRegClass);
 
-        if (flat_dest_regid.isRenameable() && flat_dest_regid.classValue()==IntRegClass &&
-            flat_dest_regid.classValue()==FloatRegClass) {
+        // if (inst->rcvgValid()) {
+            // assert(can_reuse);
+            // old_rgid = map->lookupRgid(dest_reg);
+            // rgid = inst->dst_rgids[0];
+        // } else if (can_reuse) {
+        if (can_reuse) {
+            // get new rgid
+            int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
             assert(flat_reg_idx >=0 && flat_reg_idx <64);
             old_rgid = map->lookupRgid(dest_reg);
             rgid = squash_ctx.rgid_pool[flat_reg_idx];
