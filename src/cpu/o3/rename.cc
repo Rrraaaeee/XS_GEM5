@@ -1853,6 +1853,9 @@ void Rename::SquashStream::accept(DynInstPtr inst)
     ReuseInfo reuse_info;
     reuse_info.vld = !inst->notAnInst() && inst->isExecuted(); // pc alias when itlb translation fault
 
+    if (inst->isMemRef())
+        reuse_info.vld = reuse_info.vld && (inst->isResultReady());
+
     assert(inst->numSrcRegs()  <= 5);
     assert(inst->numDestRegs() <= 1);
     for (int i = 0 ; i < inst->numSrcRegs(); i++) {

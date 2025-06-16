@@ -2294,6 +2294,25 @@ LSQUnit::writeback(const DynInstPtr &inst, PacketPtr pkt)
         if (inst->fault == NoFault) {
             // Complete access to copy data to proper place.
             inst->completeAcc(pkt);
+
+            // rcvg cache result
+            inst->setResultReady();
+            assert(inst->numSrcRegs() <= 4);
+            for (int i = 0 ; i < inst->numSrcRegs(); i++) {
+                // printf("Update mem seq %ld pc %lx src %d val %lx\n",
+                        // inst->seqNum, inst->pcState().instAddr(), i, inst->getRegOperand(&(*(inst->staticInst)), i));
+                inst->src_reg_vals[i] = inst->getRegOperand(&(*(inst->staticInst)), i);
+            }
+
+            if (inst->numDestRegs() > 0 && 
+                (inst->renamedDestIdx(0)->classValue()==IntRegClass ||
+                 inst->renamedDestIdx(0)->classValue()==FloatRegClass)) {
+                // printf("Update mem seq %ld pc %lx dst %d val %lx\n",
+                        // inst->seqNum, inst->pcState().instAddr(), 0, inst->getDestRegOperand(&(*(inst->staticInst)), 0));
+                // prevent unsupported vector register read
+                inst->dst_reg_vals[0] = inst->getDestRegOperand(&(*(inst->staticInst)), 0);
+            }
+
         } else {
             // If the instruction has an outstanding fault, we cannot complete
             // the access as this discards the current fault.
