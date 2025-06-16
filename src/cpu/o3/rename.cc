@@ -1366,39 +1366,40 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
 
         VirtRegId bypass_reg;
         bool inc_ref_of_last_dest_phy_reg = false;
-        if (inst->isMov()) {
-            // Move elimination
-            bypass_reg =
-                map->lookup(tc->flattenRegId(inst->srcRegIdx(0)));
-            DPRINTF(Rename, "Find the last reg p%i renamed for mv x%i, x%i\n",
-                    bypass_reg.PhyReg()->flatIndex(), dest_reg.index(),
-                    inst->srcRegIdx(0).index());
-            inc_ref_of_last_dest_phy_reg = true;
-            inst->setEmptyMov();
-            DPRINTF(Rename, "[sn:%llu] Inst is nop: %i, is move: %i\n", inst->seqNum, inst->isNop(),
-                    inst->isMov());
-            stats.moveEliminated++;
-        } else if (cpu->enableConstantFolding && inst->isAddImm()) {
-            // Constant folding
-            bypass_reg =
-                map->lookup(tc->flattenRegId(inst->srcRegIdx(0)));
 
-            if (!bypass_reg.IEOper() || bypass_reg.IEOper()->type == IEOperand::Type::ADD) {
-                if (bypass_reg.IEOper()) {
-                    IEOperPtr ie_op = new IEOperand(IEOperand::Type::ADD,
-                        bypass_reg.IEOper()->imm + inst->staticInst->getImm());
-                    bypass_reg.setIEOper(ie_op);
-                } else {
-                    IEOperPtr ie_op = new IEOperand(IEOperand::Type::ADD, inst->staticInst->getImm());
-                    bypass_reg.setIEOper(ie_op);
-                }
-                inc_ref_of_last_dest_phy_reg = true;
+        // if (inst->isMov()) {
+            // // Move elimination
+            // bypass_reg =
+                // map->lookup(tc->flattenRegId(inst->srcRegIdx(0)));
+            // DPRINTF(Rename, "Find the last reg p%i renamed for mv x%i, x%i\n",
+                    // bypass_reg.PhyReg()->flatIndex(), dest_reg.index(),
+                    // inst->srcRegIdx(0).index());
+            // inc_ref_of_last_dest_phy_reg = true;
+            // inst->setEmptyMov();
+            // DPRINTF(Rename, "[sn:%llu] Inst is nop: %i, is move: %i\n", inst->seqNum, inst->isNop(),
+                    // inst->isMov());
+            // stats.moveEliminated++;
+        // } else if (cpu->enableConstantFolding && inst->isAddImm()) {
+            // // Constant folding
+            // bypass_reg =
+                // map->lookup(tc->flattenRegId(inst->srcRegIdx(0)));
 
-                inst->setConstantFolded();
-                DPRINTF(Rename, "[sn:%llu] Inst constant folded, virtRegId: %s\n", inst->seqNum, bypass_reg.toString());
-                stats.constantFolded++;
-            }
-        }
+            // if (!bypass_reg.IEOper() || bypass_reg.IEOper()->type == IEOperand::Type::ADD) {
+                // if (bypass_reg.IEOper()) {
+                    // IEOperPtr ie_op = new IEOperand(IEOperand::Type::ADD,
+                        // bypass_reg.IEOper()->imm + inst->staticInst->getImm());
+                    // bypass_reg.setIEOper(ie_op);
+                // } else {
+                    // IEOperPtr ie_op = new IEOperand(IEOperand::Type::ADD, inst->staticInst->getImm());
+                    // bypass_reg.setIEOper(ie_op);
+                // }
+                // inc_ref_of_last_dest_phy_reg = true;
+
+                // inst->setConstantFolded();
+                // DPRINTF(Rename, "[sn:%llu] Inst constant folded, virtRegId: %s\n", inst->seqNum, bypass_reg.toString());
+                // stats.constantFolded++;
+            // }
+        // }
 
         rename_result = map->rename(flat_dest_regid, bypass_reg);
 
