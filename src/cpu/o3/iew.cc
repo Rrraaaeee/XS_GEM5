@@ -606,11 +606,18 @@ IEW::squashDueToMemOrder(const DynInstPtr& inst, ThreadID tid)
         execWB->squashedStreamId[tid] = inst->getFsqId();
         execWB->squashedTargetId[tid] = inst->getFtqId();
         execWB->squashedLoopIter[tid] = inst->getLoopIteration();
-        set(execWB->pc[tid], inst->pcState());
         execWB->mispredictInst[tid] = NULL;
 
         // Must include the memory violator in the squash.
-        execWB->includeSquashInst[tid] = true;
+        // RCVG: if rcvg, the load can commit successfully
+        if (inst->rcvgValid()) {
+            inst->rcvgLoadCorrection(true);
+            execWB->includeSquashInst[tid] = false;
+            set(execWB->pc[tid], inst->get_next_pc());
+        } else {
+            execWB->includeSquashInst[tid] = true;
+            set(execWB->pc[tid], inst->pcState());
+        }
 
         wroteToTimeBuffer = true;
 

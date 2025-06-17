@@ -214,6 +214,7 @@ class DynInst : public ExecContext, public RefCounted
         IsEmptyMov,
         IsConstantFolded,
         Rcvg,
+        RcvgLoadCorrection,
         MaxFlags
     };
 
@@ -477,6 +478,9 @@ class DynInst : public ExecContext, public RefCounted
     bool rcvgValid() const { return instFlags[Rcvg]; }
     void rcvgValid(bool b) { instFlags[Rcvg] = b; }
 
+    bool rcvgLoadCorrection() const { return instFlags[RcvgLoadCorrection]; }
+    void rcvgLoadCorrection(bool b) { instFlags[RcvgLoadCorrection] = b; }
+
     ////////////////////////////////////////////
     //
     // INSTRUCTION EXECUTION
@@ -647,6 +651,13 @@ class DynInst : public ExecContext, public RefCounted
         DPRINTF(DecoupleBP, "check misprediction next pc=%s and pred pc=%s\n",
                 *next_pc, *predPC);
         return *next_pc != *predPC;
+    }
+
+    std::unique_ptr<PCStateBase> get_next_pc()
+    {
+        std::unique_ptr<PCStateBase> next_pc(pc->clone());
+        staticInst->advancePC(*next_pc);
+        return next_pc;
     }
 
     //

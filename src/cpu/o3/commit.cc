@@ -1193,24 +1193,27 @@ Commit::commitInsts()
         /*=================*/
                 if (head_inst->rcvgValid()) {
                     bool success = true;
-                    for (int i = 0 ; i < head_inst->numSrcRegs(); i++) {
-                        if (head_inst->src_reg_vals[i] != head_inst->reuse_src_reg_vals[i]) {
-                            std::string  str;
-                            head_inst->dump(str);
-                            printf("%ld %s src check Fail! expect %lx real %lx\n", head_inst->seqNum, str.c_str(), head_inst->src_reg_vals[i] ,
-                                                                                          head_inst->reuse_src_reg_vals[i]);
-                            success = false;
-                            break;
+                    if (!head_inst->rcvgLoadCorrection()) {
+                        // if load corection, we will compare false, but load has been correction by triggering violation
+                        for (int i = 0 ; i < head_inst->numSrcRegs(); i++) {
+                            if (head_inst->src_reg_vals[i] != head_inst->reuse_src_reg_vals[i]) {
+                                std::string  str;
+                                head_inst->dump(str);
+                                printf("%ld %s src check Fail! expect %lx real %lx\n", head_inst->seqNum, str.c_str(), head_inst->src_reg_vals[i] ,
+                                                                                              head_inst->reuse_src_reg_vals[i]);
+                                success = false;
+                                break;
+                            }
                         }
-                    }
 
-                    if (head_inst->numDestRegs() > 0) {
-                        if (head_inst->dst_reg_vals[0] != head_inst->reuse_dst_reg_vals[0]) {
-                            std::string  str;
-                            head_inst->dump(str);
-                            printf("%ld %s dst check Fail! expect %lx real %lx\n", head_inst->seqNum, str.c_str(), head_inst->dst_reg_vals[0] ,
-                                                                                          head_inst->reuse_dst_reg_vals[0]);
-                            success = false;
+                        if (head_inst->numDestRegs() > 0) {
+                            if (head_inst->dst_reg_vals[0] != head_inst->reuse_dst_reg_vals[0]) {
+                                std::string  str;
+                                head_inst->dump(str);
+                                printf("%ld %s dst check Fail! expect %lx real %lx\n", head_inst->seqNum, str.c_str(), head_inst->dst_reg_vals[0] ,
+                                                                                              head_inst->reuse_dst_reg_vals[0]);
+                                success = false;
+                            }
                         }
                     }
                     if (success) {

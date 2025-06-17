@@ -1656,6 +1656,29 @@ Rename::checkSignalsAndUpdate(ThreadID tid)
 
         squash(fromCommit->commitInfo[tid].doneSeqNum, tid);
 
+        /*=================*/
+        /*  RCVG BEGIN     */
+        /*=================*/
+        bool rcvg_load = fromCommit->commitInfo[tid].squashInst &&
+                         fromCommit->commitInfo[tid].squashInst->isLoad() &&
+                         fromCommit->commitInfo[tid].squashInst->rcvgValid();
+
+        // If load violation, also need to update rgid to invalidate eldere references
+        if (rcvg_load) {
+            DynInstPtr inst = fromCommit->commitInfo[tid].squashInst;
+            RegId dest_regid = inst->destRegIdx(0);
+            int flat_reg_idx = dest_regid.classValue() * 32 + dest_regid.index();
+            assert(flat_reg_idx >=0 && flat_reg_idx <64);
+            int rgid = squash_ctx.rgid_pool[flat_reg_idx];
+            squash_ctx.rgid_pool[flat_reg_idx] ++;
+            renameMap[tid]->setRgid(dest_regid, rgid);
+        }
+
+        /*=================*/
+        /*  RCVG END       */
+        /*=================*/
+
+
         localSquashVer.update(fromCommit->commitInfo[tid].squashVersion.getVersion());
         DPRINTF(Rename, "Updating squash version to %u\n",
                 localSquashVer.getVersion());
