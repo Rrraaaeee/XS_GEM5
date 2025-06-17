@@ -1140,6 +1140,10 @@ IEW::dispatchInstFromRename(ThreadID tid)
                 scheduler->addProducer(inst);
             }
 
+            if (inst->rcvgCanBypass()) {
+                scheduler->addProducer(inst, true);
+            }
+
             if (inst->isAtomic()) {
                 DPRINTF(IEW,
                         "[tid:%i] Dispatch: Memory instruction "

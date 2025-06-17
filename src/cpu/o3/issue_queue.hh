@@ -282,7 +282,7 @@ class Scheduler : public SimObject
     bool ready(const DynInstPtr& inst, int disp_seq);
     DynInstPtr getInstByDstReg(RegIndex flatIdx);
 
-    void addProducer(const DynInstPtr& inst);
+    void addProducer(const DynInstPtr& inst, bool bypass=false);
     // return true if insert successful
     void insert(const DynInstPtr& inst, int disp_seq);
     void insertNonSpec(const DynInstPtr& inst);

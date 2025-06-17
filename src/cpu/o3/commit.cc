@@ -1193,7 +1193,7 @@ Commit::commitInsts()
         /*=================*/
                 if (head_inst->rcvgValid()) {
                     bool success = true;
-                    if (!head_inst->rcvgLoadCorrection()) {
+                    if (!head_inst->rcvgCanBypass() && !head_inst->rcvgLoadCorrection()) {
                         // if load corection, we will compare false, but load has been correction by triggering violation
                         for (int i = 0 ; i < head_inst->numSrcRegs(); i++) {
                             if (head_inst->src_reg_vals[i] != head_inst->reuse_src_reg_vals[i]) {

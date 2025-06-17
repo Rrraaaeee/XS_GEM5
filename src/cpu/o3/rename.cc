@@ -1497,8 +1497,14 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
 
         if (inst->rcvgValid() && !inst->isLoad()) {
             // set rename dest register value and mark it as ready
-            cpu->setReg(rename_result.first.PhyReg(), &(inst->reuse_dst_reg_vals[dest_idx]));
-            // inst->rcvgCanBypass(true);
+            assert(inst->numDestRegs() == 1);
+            assert(dest_idx==0);
+            cpu->setReg(rename_result.first.PhyReg(), &(inst->reuse_dst_reg_vals[0]));
+            inst->rcvgCanBypass(true);
+
+            // std::string s;
+            // inst->dump(s);
+            // printf("%ld Bypassing %s set rd %lx\n", inst->seqNum, s.c_str(), inst->reuse_dst_reg_vals[dest_idx]);
         }
 
         /*=================*/

@@ -922,7 +922,7 @@ Scheduler::getInstByDstReg(RegIndex flatIdx)
 }
 
 void
-Scheduler::addProducer(const DynInstPtr& inst)
+Scheduler::addProducer(const DynInstPtr& inst, bool bypass)
 {
     DPRINTF(Schedule, "[sn:%llu] addProdecer\n", inst->seqNum);
     for (int i = 0; i < inst->numDestRegs(); i++) {
@@ -930,9 +930,9 @@ Scheduler::addProducer(const DynInstPtr& inst)
         if (dst->isFixedMapping()) {
             continue;
         }
-        scoreboard[dst->flatIndex()] = false;
-        bypassScoreboard[dst->flatIndex()] = false;
-        earlyScoreboard[dst->flatIndex()] = false;
+        scoreboard[dst->flatIndex()] = bypass;
+        bypassScoreboard[dst->flatIndex()] = bypass;
+        earlyScoreboard[dst->flatIndex()] = bypass;
         DPRINTF(Schedule, "mark scoreboard p%lu not ready\n", dst->flatIndex());
     }
 }
