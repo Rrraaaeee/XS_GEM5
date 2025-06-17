@@ -937,17 +937,17 @@ Rename::renameInsts(ThreadID tid)
                 // record reuse values for function verification
                 assert(inst->numSrcRegs() <= 3);
                 for (int i = 0 ; i < inst->numSrcRegs(); i++) {
-                    // printf("Inst %ld pc %lx reuse src %d val %ld from %ld\n",
+                    // printf("Inst %ld pc %lx reuse src %d val %lx rgid %d from %ld\n",
                             // inst->seqNum, inst->pcState().instAddr(), i, reuse_info.src_reg_vals[i],
-                            // squash_ctx.get_stream_read().wpq_it->seqNum);
+                            // reuse_info.src_rgids[i], squash_ctx.get_stream_read().wpq_it->seqNum);
                     inst->reuse_src_reg_vals[i] = reuse_info.src_reg_vals[i];
                     inst->src_rgids[i] = reuse_info.src_rgids[i];
                 }
 
                 if (inst->numDestRegs() > 0) {
-                    // printf("Inst %ld pc %lx reuse dst %d val %ld from %ld\n",
+                    // printf("Inst %ld pc %lx reuse dst %d val %lx rgid %d from %ld\n",
                             // inst->seqNum, inst->pcState().instAddr(), 0, reuse_info.dst_reg_vals[0],
-                            // squash_ctx.get_stream_read().wpq_it->seqNum);
+                            // reuse_info.dst_rgids[0], squash_ctx.get_stream_read().wpq_it->seqNum);
                     inst->reuse_dst_reg_vals[0] = reuse_info.dst_reg_vals[0];
                     inst->dst_rgids[0] = reuse_info.dst_rgids[0];
                 }
@@ -1468,6 +1468,8 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
                 rename_result.second.toString(),
                 rename_result.first.toString());
 
+        // printf("Renaming inst %ld with rgid %d (old %d)\n", inst->seqNum, rgid, old_rgid);
+
         // Record the rename information so that a history can be kept.
         RenameHistory hb_entry(inst->seqNum, flat_dest_regid,
                                rename_result.first,
@@ -1935,6 +1937,8 @@ bool Rename::SquashReuseCtx::try_find_rcvg(const DynInstPtr& inst)
             rename->stats.rcvgFound ++;
             get_stream(i).rcvg_dist = stream_dist;
 
+            // printf("Found RCVG at stream %d\n", rpt);
+
             return true;
         }
     }
@@ -1963,6 +1967,8 @@ bool Rename::SquashReuseCtx::try_find_dvrg(const DynInstPtr& inst)
 
         // clear stream
         get_stream(rpt).reset();
+
+        // printf("DIVG for stream %d\n", rpt);
         return true;
     }
 

@@ -382,8 +382,10 @@ DynInst::execute()
         src_reg_vals[i] = getRegOperand(&(*staticInst), i);
     }
 
-    if (numDestRegs() > 0)
+    if (numDestRegs() > 0) {
         dst_reg_vals[0] = getDestRegOperand(&(*staticInst), 0);
+        // printf("%ld Execute inst %lx dst %lx\n", seqNum, pcState().instAddr(), dst_reg_vals[0]);
+    }
 
     thread->noSquashFromTC = no_squash_from_TC;
 

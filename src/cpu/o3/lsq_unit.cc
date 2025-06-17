@@ -953,6 +953,7 @@ LSQUnit::checkViolations(typename LoadQueue::iterator& loadIt,
 
         if (inst->dst_reg_vals[0] != inst->reuse_dst_reg_vals[0]) {
             memDepViolator = inst;
+            // printf("%ld Found violation! rgid %d\n", inst->seqNum, inst->dst_rgids[0]);
             return std::make_shared<GenericISA::M5PanicFault>(
                     "Detected RCVG fault on inst [sn:%lli]\n",
                     inst->seqNum);
@@ -2330,16 +2331,17 @@ LSQUnit::writeback(const DynInstPtr &inst, PacketPtr pkt)
             inst->setResultReady();
             assert(inst->numSrcRegs() <= 4);
             for (int i = 0 ; i < inst->numSrcRegs(); i++) {
-                // printf("Update mem seq %ld pc %lx src %d val %lx\n",
-                        // inst->seqNum, inst->pcState().instAddr(), i, inst->getRegOperand(&(*(inst->staticInst)), i));
+                // printf("Update mem seq %ld pc %lx src %d val %lx rgid %d\n",
+                        // inst->seqNum, inst->pcState().instAddr(), i, inst->getRegOperand(&(*(inst->staticInst)), i), inst->src_rgids[i]);
                 inst->src_reg_vals[i] = inst->getRegOperand(&(*(inst->staticInst)), i);
             }
 
             if (inst->numDestRegs() > 0 && 
                 (inst->renamedDestIdx(0)->classValue()==IntRegClass ||
                  inst->renamedDestIdx(0)->classValue()==FloatRegClass)) {
-                // printf("Update mem seq %ld pc %lx dst %d val %lx\n",
-                        // inst->seqNum, inst->pcState().instAddr(), 0, inst->getDestRegOperand(&(*(inst->staticInst)), 0));
+                // printf("Update mem seq %ld pc %lx dst %d val %lx rgid %d\n",
+                        // inst->seqNum, inst->pcState().instAddr(), 0, inst->getDestRegOperand(&(*(inst->staticInst)), 0), inst->dst_rgids[0]);
+
                 // prevent unsupported vector register read
                 inst->dst_reg_vals[0] = inst->getDestRegOperand(&(*(inst->staticInst)), 0);
             }
