@@ -387,6 +387,13 @@ DynInst::execute()
         // printf("%ld Execute inst %lx dst %lx\n", seqNum, pcState().instAddr(), dst_reg_vals[0]);
     }
 
+    if (rcvgValid() && !isLoad()) {
+        // function verification.
+        // Value set at rename time should be same at execution time
+        assert(numDestRegs() > 0);
+        assert(dst_reg_vals[0] == reuse_dst_reg_vals[0]);
+    }
+
     thread->noSquashFromTC = no_squash_from_TC;
 
     return fault;

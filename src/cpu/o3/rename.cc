@@ -1425,10 +1425,6 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
             // }
         // }
 
-        rename_result = map->rename(flat_dest_regid, bypass_reg);
-
-        inst->flattenedDestIdx(dest_idx, flat_dest_regid);
-
         /*=================*/
         /*  RCVG BEGIN     */
         /*=================*/
@@ -1444,7 +1440,6 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
             old_rgid = map->lookupRgid(dest_reg);
             rgid = inst->dst_rgids[0];
         } else if (can_reuse) {
-        // if (can_reuse) {
             // get new rgid
             int flat_reg_idx = flat_dest_regid.classValue() * 32 + flat_dest_regid.index();
             assert(flat_reg_idx >=0 && flat_reg_idx <64);
@@ -1457,6 +1452,11 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         /*=================*/
         /*  RCVG END       */
         /*=================*/
+
+        rename_result = map->rename(flat_dest_regid, bypass_reg);
+
+        inst->flattenedDestIdx(dest_idx, flat_dest_regid);
+
 
         if (!inc_ref_of_last_dest_phy_reg) {
             scoreboard->unsetReg(rename_result.first.PhyReg());
@@ -1490,6 +1490,20 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
         inst->renameDestReg(dest_idx,
                             rename_result.first,
                             rename_result.second, rgid);
+
+        /*=================*/
+        /*  RCVG BEGIN     */
+        /*=================*/
+
+        if (inst->rcvgValid() && !inst->isLoad()) {
+            // set rename dest register value and mark it as ready
+            cpu->setReg(rename_result.first.PhyReg(), &(inst->reuse_dst_reg_vals[dest_idx]));
+            // inst->rcvgCanBypass(true);
+        }
+
+        /*=================*/
+        /*  RCVG END       */
+        /*=================*/
 
         ++stats.renamedOperands;
     }
@@ -1979,8 +1993,8 @@ bool Rename::SquashReuseCtx::try_reuse(const DynInstPtr& inst)
 {
     assert(state==CONCURRENT || state==RCVG);
 
-    if (inst->isControl() || (inst->isMemRef() && !inst->isLoad()) || inst->staticInst->isVectorConfig()) {
-    // if (inst->isControl() || (inst->isMemRef()) || inst->staticInst->isVectorConfig()) {
+    if (inst->isControl() || (inst->isMemRef() && !inst->isLoad()) ||
+        inst->staticInst->isVectorConfig() || inst->isSyscall()) {
         return false;
     }
 

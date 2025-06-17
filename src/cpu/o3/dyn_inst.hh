@@ -215,6 +215,7 @@ class DynInst : public ExecContext, public RefCounted
         IsConstantFolded,
         Rcvg,
         RcvgLoadCorrection,
+        RcvgCanBypass,
         MaxFlags
     };
 
@@ -481,6 +482,9 @@ class DynInst : public ExecContext, public RefCounted
     bool rcvgLoadCorrection() const { return instFlags[RcvgLoadCorrection]; }
     void rcvgLoadCorrection(bool b) { instFlags[RcvgLoadCorrection] = b; }
 
+    bool rcvgCanBypass() const { return instFlags[RcvgCanBypass]; }
+    void rcvgCanBypass(bool b) { instFlags[RcvgCanBypass] = b; }
+
     ////////////////////////////////////////////
     //
     // INSTRUCTION EXECUTION
@@ -690,7 +694,7 @@ class DynInst : public ExecContext, public RefCounted
     bool isAddImm()       const { return staticInst->isAddImm(); }
     bool isEliminated() const
     {
-        return instFlags[IsEmptyMov] || instFlags[IsConstantFolded];
+        return instFlags[IsEmptyMov] || instFlags[IsConstantFolded] || instFlags[RcvgCanBypass];
     }
     bool
     isSerializeBefore() const
