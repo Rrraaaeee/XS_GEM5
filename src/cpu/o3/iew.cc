@@ -1073,6 +1073,11 @@ IEW::dispatchInstFromRename(ThreadID tid)
         while (!insts_to_dispatch.empty()) {
             bool add_to_iq = false;
             auto &inst = insts_to_dispatch.front();
+
+            // std::string s;
+            // inst->dump(s);
+            // printf("Dispatching inst %s %ld rcvg %d\n", s.c_str(), inst->seqNum, inst->rcvgCanBypass());
+
             disp_seq++;
             int ins = cpu->cpuStats.committedInsts.total();
             if (cpu->hasHintDownStream() && ins % 10000 == 1) {

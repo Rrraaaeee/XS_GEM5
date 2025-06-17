@@ -655,6 +655,7 @@ public:
     };
 
     struct SquashReuseCtx {
+
         // ctx info, simulation only
         int num_streams;
         int siz_stream;

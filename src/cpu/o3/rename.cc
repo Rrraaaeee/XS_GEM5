@@ -1468,7 +1468,9 @@ Rename::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
                 rename_result.second.toString(),
                 rename_result.first.toString());
 
-        // printf("Renaming inst %ld with rgid %d (old %d)\n", inst->seqNum, rgid, old_rgid);
+        // std::string s;
+        // inst->dump(s);
+        // printf("%s Renaming inst %ld with rgid %d (old %d)\n", s.c_str(), inst->seqNum, rgid, old_rgid);
 
         // Record the rename information so that a history can be kept.
         RenameHistory hb_entry(inst->seqNum, flat_dest_regid,

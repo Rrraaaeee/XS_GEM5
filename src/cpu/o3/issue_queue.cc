@@ -272,6 +272,13 @@ IssueQue::issueToFu()
             DPRINTF(Schedule, "[sn:%llu] issue failed due to being occupied\n", inst->seqNum);
             continue;
         }
+
+        // if (!inst->isSplitStoreData()) {
+            // std::string s;
+            // inst->dump(s);
+            // printf("check score board %ld %s rcvg %d\n", inst->seqNum, s.c_str(), inst->rcvgCanBypass());
+        // }
+
         if (!checkScoreboard(inst)) {
             continue;
         }
@@ -1174,6 +1181,11 @@ Scheduler::bypassWriteback(const DynInstPtr& inst)
         if (dst->isFixedMapping()) {
             continue;
         }
+
+        // std::string s;
+        // inst->dump(s);
+        // printf("Set preg %d as ready. Insn %s %ld\n", dst->flatIndex(), s.c_str(), inst->seqNum);
+
         bypassScoreboard[dst->flatIndex()] = true;
         DPRINTF(Schedule, "p%lu in bypassNetwork ready\n", dst->flatIndex());
     }

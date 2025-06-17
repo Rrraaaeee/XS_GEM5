@@ -1217,9 +1217,6 @@ Commit::commitInsts()
                         }
                     }
                     if (success) {
-                        // std::string str;
-                        // head_inst->dump(str);
-                        // printf("%s rcvg sucess!\n",str.c_str());
                         stats.rcvgCommitSuccess++;
                         stats.rcvgSuccessNumSrcReg.sample(head_inst->numSrcRegs());
                     } else {
