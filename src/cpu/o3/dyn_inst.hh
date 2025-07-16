@@ -1227,13 +1227,13 @@ class DynInst : public ExecContext, public RefCounted
     // hasn't happened (yet).
     /** Tick records used for the pipeline activity viewer. */
     Tick fetchTick = -1;      // instruction fetch is completed.
-    int32_t decodeTick = -1;  // instruction enters decode phase
-    int32_t renameTick = -1;  // instruction enters rename phase
-    int32_t dispatchTick = -1;
-    int32_t issueTick = -1;
-    int32_t completeTick = -1;
-    int32_t commitTick = -1;
-    int32_t storeTick = -1;
+    Tick decodeTick = -1;  // instruction enters decode phase
+    Tick renameTick = -1;  // instruction enters rename phase
+    Tick dispatchTick = -1;
+    Tick issueTick = -1;
+    Tick completeTick = -1;
+    Tick commitTick = -1;
+    Tick storeTick = -1;
 #endif
 
     /* Values used by LoadToUse stat */

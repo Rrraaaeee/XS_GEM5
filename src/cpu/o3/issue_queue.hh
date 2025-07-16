@@ -141,6 +141,9 @@ class IssueQue : public SimObject
         statistics::Vector portissued;
         statistics::Vector portBusy;
         statistics::Average avgInsts;
+        statistics::Scalar dispatchBubble;
+        statistics::Scalar issueStallBubble;
+        statistics::Vector upstreamDrainBubble;
     }* iqstats = nullptr;
 
     void replay(const DynInstPtr& inst);
