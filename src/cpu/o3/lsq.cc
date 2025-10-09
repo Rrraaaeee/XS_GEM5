@@ -223,7 +223,6 @@ LSQ::tick()
         ThreadID tid = *threads++;
         thread[tid].tick();
     }
-
 }
 
 void

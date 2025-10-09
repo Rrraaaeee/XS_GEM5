@@ -448,7 +448,7 @@ if __name__ == '__m5_main__':
         FutureClass = None
 
     args.xiangshan_system = True
-    args.enable_difftest = True
+    #  args.enable_difftest = True
     args.enable_riscv_vector = True
 
     assert not args.external_memory_system

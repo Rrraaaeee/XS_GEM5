@@ -203,7 +203,7 @@ class BaseO3CPU(BaseCPU):
     store_set_clear_thres = Param.Unsigned(1048576,"")
     LFSTEntrySize = Param.Unsigned(4,"The number of store table inst in every entry of LFST can contain")
     SSITSize = Param.Unsigned(8192, "Store set ID table size")
-    enable_storeSet_train = Param.Bool(True, "Training store set predictor")
+    enable_storeSet_train = Param.Bool(False, "Training store set predictor")
 
     BankConflictCheck = Param.Bool(True, "open Bank conflict check")
     sbufferBankWriteAccurately = Param.Bool(False, "Sbuffer write to memory with bank conflict check")
