@@ -160,6 +160,8 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
       powerGatingOnIdle(p.power_gating_on_idle),
       enterPwrGatingEvent([this] { enterPwrGating(); }, name()),
       warmupInstCount(p.warmupInstCount),
+      repeatDumpInstCount(p.dumpStatsInterval),
+      nextDumpInstCount(p.dumpStatsInterval),
       enableDifftest(p.enable_difftest),
       enableSv48(p.enable_sv48),
       dumpCommitFlag(p.dump_commit),

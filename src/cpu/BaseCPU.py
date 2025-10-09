@@ -150,6 +150,8 @@ class BaseCPU(ClockedObject):
     warmupInstCount = Param.Counter(0,
         "reset stats when any thread has reached this inst count")
 
+    dumpStatsInterval = Param.Int(5000, "Dump stats interval")
+
     enable_difftest = Param.Bool(False,"use NEMU as ref to difftest")
     enable_sv48 = Param.Bool(False, "enable sv48")
     dump_commit = Param.Bool(False,"dump commit log")

@@ -129,7 +129,7 @@ def _url_factory(schemes, enable=True):
     return decorator
 
 @_url_factory([ None, "", "text", "file", ])
-def _textFactory(fn, desc=True, spaces=True):
+def _textFactory(fn, desc=False, spaces=False):
     """Output stats in text format.
 
     Text stat files contain one stat per line with an optional
@@ -339,7 +339,19 @@ def _dump_to_visitor(visitor, roots=None):
     # New stats
     def dump_group(group):
         for stat in group.getStats():
-            stat.visit(visitor)
+
+            if str(stat.name) in (
+                    "fetchStallReason",
+                    "dispatchStallReason",
+                    "ipc",
+                    "recovery_bubble",
+                    "dispatchBubble",
+                    "arbFailed",
+                    "portBusy",
+                    "issueStallBubble",
+                    "upstreamDrainBubble",):
+                stat.visit(visitor)
+
         for n, g in group.getStatGroups().items():
             visitor.beginGroup(n)
             dump_group(g)

@@ -1378,14 +1378,14 @@ CPU::instDone(ThreadID tid, const DynInstPtr &inst)
         }
 
         if (this->nextDumpInstCount
-                && totalInsts() == this->nextDumpInstCount) {
-            fprintf(stderr, "Will trigger stat dump and reset\n");
+                && totalInsts() >= this->nextDumpInstCount) {
+            // fprintf(stderr, "Will trigger stat dump and reset\n");
             statistics::schedStatEvent(true, true, curTick(), 0);
             scheduleInstStop(tid,0,"Will trigger stat dump and reset");
 
-            /*if (this->repeatDumpInstCount) {
+            if (this->repeatDumpInstCount) {
                 this->nextDumpInstCount += this->repeatDumpInstCount;
-            };*/
+            };
         }
 
         // Check for instruction-count-based events.

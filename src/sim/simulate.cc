@@ -191,7 +191,7 @@ simulate(Tick num_cycles)
     const Tick exit_tick = num_cycles < MaxTick - curTick() ?
                                         curTick() + num_cycles : MaxTick;
 
-    inform("Entering event queue @ %d.  Starting simulation...\n", curTick());
+    // inform("Entering event queue @ %d.  Starting simulation...\n", curTick());
 
     if (!simulatorThreads)
         simulatorThreads.reset(new SimulatorThreads(numMainEventQueues));
