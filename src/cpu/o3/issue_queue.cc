@@ -170,17 +170,22 @@ IssueQue::IssueQueStats::IssueQueStats(statistics::Group* parent, IssueQue* que,
       ADD_STAT(issueDist, statistics::units::Count::get(), "distruibution of issue"),
       ADD_STAT(portissued, statistics::units::Count::get(), "count each port issues"),
       ADD_STAT(portBusy, statistics::units::Count::get(), "count each port busy cycles"),
-      ADD_STAT(avgInsts, statistics::units::Count::get(), "average insts")
+      ADD_STAT(avgInsts, statistics::units::Count::get(), "average insts"),
+      ADD_STAT(dispatchBubble, statistics::units::Count::get(), "dispatch bubble per queue"),
+      ADD_STAT(issueStallBubble, statistics::units::Count::get(), "stall bubble per queue"),
+      ADD_STAT(upstreamDrainBubble, statistics::units::Count::get(), "drain bubbles due to upstrea dependencies")
 {
     insertDist.init(que->inports + 1).flags(statistics::nozero);
     issueDist.init(que->outports + 1).flags(statistics::nozero);
     portissued.init(que->outports).flags(statistics::nozero);
     portBusy.init(que->outports).flags(statistics::nozero);
+    upstreamDrainBubble.init(16).flags(statistics::nozero);
     retryMem.flags(statistics::nozero);
     canceledInst.flags(statistics::nozero);
     loadmiss.flags(statistics::nozero);
     arbFailed.flags(statistics::nozero);
     issueOccupy.flags(statistics::nozero);
+    upstreamDrainBubble.flags(statistics::nozero);
 }
 
 IssueQue::IssueQue(const IssueQueParams& params)
@@ -411,6 +416,13 @@ IssueQue::issueToFu()
     if (replayed) {
         iqstats->issueOccupy += replayed;
     }
+
+    int num_stall_insts = replayQ.size();
+    for (const auto& readyQ : readyQs) {
+        num_stall_insts += readyQ->size();
+    }
+    iqstats->issueStallBubble += num_stall_insts;
+
 }
 
 void
@@ -469,6 +481,16 @@ IssueQue::wakeUpDependents(const DynInstPtr& inst, bool speculative)
 
 
             DPRINTF(Schedule, "[sn:%llu] src%d was woken\n", consumer->seqNum, srcIdx);
+
+            if (consumer->readyToIssue() && !consumer->inReadyQ() &&
+                (!consumer->isMemRef() || consumer->memDepSolved())) {
+                if (inst->issueQue && consumer->dispatchTick!=-1) {
+                    uint64_t dispatch_to_ready_bubbles = (curTick() - consumer->dispatchTick) / 333;
+                    // printf("%lx %lx %lx\n", curTick(), consumer->dispatchTick, dispatch_to_ready_bubbles);
+                    int iqid = inst->issueQue->getId();
+                    iqstats->upstreamDrainBubble[iqid] += dispatch_to_ready_bubbles;
+                }
+            }
             addIfReady(consumer);
         }
 
@@ -631,6 +653,7 @@ IssueQue::tick()
     if (instNumInsert > 0) {
         iqstats->insertDist[instNumInsert]++;
     }
+    iqstats->dispatchBubble += (inports - instNumInsert);
     instNumInsert = 0;
 
     scheduleInst();

@@ -1067,6 +1067,7 @@ IEW::dispatchInstFromRename(ThreadID tid)
             bool add_to_iq = false;
             auto &inst = insts_to_dispatch.front();
             disp_seq++;
+            inst->dispatchTick = curTick() - inst->fetchTick;
             int ins = cpu->cpuStats.committedInsts.total();
             if (cpu->hasHintDownStream() && ins % 10000 == 1) {
                 cpu->hintDownStream->notifyIns(ins);
