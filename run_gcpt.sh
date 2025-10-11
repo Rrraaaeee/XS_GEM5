@@ -24,12 +24,11 @@ function run_gcpt() {
 
 export -f run_gcpt
 
-# BIN="/home/qingxuan/work/xs-workspace/xs-env/xs-env/NEMU/output/checkpoint/astar_rivers/15503/_15503_0.154731_memory_.zstd"
-# run_gcpt "TEST" ${BIN}
-
 OUT_DIR_BASE=$1
 CPT_DIR="/home/qingxuan/work/xs-workspace/xs-env/xs-env/NEMU/output/checkpoint/"
-BINS=$(ls ${CPT_DIR}/h264ref_foreman.main*/*/*.zstd)
+# BINS=$(ls ${CPT_DIR}/h264ref_foreman.main*/*/*.zstd)
+BINS=$(ls ${CPT_DIR}/*/*/*.zstd)
+
 OUT_DIR=$(for f in ${BINS}; do echo "${OUT_DIR_BASE}/$(basename $(dirname $(dirname "$f")))_$(basename $(dirname "$f"))"; done)
 
 mkdir -p $OUT_DIR_BASE
