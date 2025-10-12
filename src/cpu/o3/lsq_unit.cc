@@ -2091,6 +2091,9 @@ LSQUnit::offloadToStoreBuffer()
             storeWBIt++;
             offloaded++;
         }
+        if (storeBuffer.unsentSize() != 0) {
+            break;
+        }
     }
 }
 
