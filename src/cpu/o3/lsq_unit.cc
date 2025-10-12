@@ -2005,7 +2005,9 @@ LSQUnit::offloadToStoreBuffer()
     // write the committed store to storebuffer
     int offloaded = 0;
     if (storesToWB ==0 ) {
+        stats.sbufferNoEnqueue++;
     }
+
     while (storesToWB > 0 &&
            storeWBIt.dereferenceable() &&
            storeWBIt->valid() &&

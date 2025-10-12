@@ -339,15 +339,13 @@ def _dump_to_visitor(visitor, roots=None):
     # New stats
     def dump_group(group):
         for stat in group.getStats():
-
             if any(item in str(stat.name) for item in
                    ("idleCycles", # rename.drain
                     "blockCycles", # rename.stall
-                    "stqFull", # rename.stall
                     "sbufferFull", # sbuffer.stall.full
                     "sbufferBWFull", # sbuffer.stall.bwfull
-                    "sbufferInorder", # sbuffer.stall.inorder
                     "sbufferNoEnqueue", # sbuffer.stall.inorder
+                    "renameStallReason",
                     "ipc", # output
                 )):
                 stat.visit(visitor)
