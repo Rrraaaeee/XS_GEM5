@@ -340,16 +340,16 @@ def _dump_to_visitor(visitor, roots=None):
     def dump_group(group):
         for stat in group.getStats():
 
-            if str(stat.name) in (
-                    "fetchStallReason",
-                    "dispatchStallReason",
-                    "ipc",
-                    "recovery_bubble",
-                    "dispatchBubble",
-                    "arbFailed",
-                    "portBusy",
-                    "issueStallBubble",
-                    "upstreamDrainBubble",):
+            if any(item in str(stat.name) for item in
+                   ("idleCycles", # rename.drain
+                    "blockCycles", # rename.stall
+                    "stqFull", # rename.stall
+                    "sbufferFull", # sbuffer.stall.full
+                    "sbufferBWFull", # sbuffer.stall.bwfull
+                    "sbufferInorder", # sbuffer.stall.inorder
+                    "sbufferNoEnqueue", # sbuffer.stall.inorder
+                    "ipc", # output
+                )):
                 stat.visit(visitor)
 
         for n, g in group.getStatGroups().items():

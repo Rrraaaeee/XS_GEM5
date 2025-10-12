@@ -769,8 +769,10 @@ Rename::renameInsts(ThreadID tid)
                         tid);
                 source = LQ;
                 incrFullStat(source);
-                rename_stalls.push(checkRenameStallFromIEW(tid));
-                breakRename = checkRenameStallFromIEW(tid);
+                // rename_stalls.push(LdqFull);
+                // breakRename = checkRenameStallFromIEW(tid);
+                rename_stalls.push(LdqFull);
+                breakRename = LdqFull;
                 break;
             }
         }
@@ -781,8 +783,10 @@ Rename::renameInsts(ThreadID tid)
                         tid);
                 source = SQ;
                 incrFullStat(source);
-                rename_stalls.push(checkRenameStallFromIEW(tid));
-                breakRename = checkRenameStallFromIEW(tid);
+                // rename_stalls.push(checkRenameStallFromIEW(tid));
+                // breakRename = checkRenameStallFromIEW(tid);
+                rename_stalls.push(StqFull);
+                breakRename = StqFull;
                 break;
             }
         }
@@ -1442,9 +1446,13 @@ Rename::checkStall(ThreadID tid)
         DPRINTF(Rename,"[tid:%i] Stall: IQ has 0 free entries.\n", tid);
         blockReason = checkRenameStallFromIEW(tid);
         ret_val = true;
-    } else if (calcFreeLQEntries(tid) <= 0 && calcFreeSQEntries(tid) <= 0) {
+    } else if (calcFreeLQEntries(tid) <= 0) {
         DPRINTF(Rename,"[tid:%i] Stall: LSQ has 0 free entries.\n", tid);
-        blockReason = checkRenameStallFromIEW(tid);
+        blockReason = LdqFull;
+        ret_val = true;
+    } else if (calcFreeSQEntries(tid) <= 0) {
+        DPRINTF(Rename,"[tid:%i] Stall: LSQ has 0 free entries.\n", tid);
+        blockReason = StqFull;
         ret_val = true;
     } else if (renameMap[tid]->numFreeEntries() <= 0) {
         DPRINTF(Rename,"[tid:%i] Stall: RenameMap has 0 free entries.\n", tid);
@@ -1678,9 +1686,9 @@ Rename::checkRenameStallFromIEW(ThreadID tid)
 
     if (robHeadStallReason == StallReason::NoStall) {
         if (calcFreeLQEntries(tid) <= 0) {
-            return fromIEW->iewInfo[tid].lqHeadStallReason;
+            return LdqFull;
         } else if (calcFreeSQEntries(tid) <= 0) {
-            return fromIEW->iewInfo[tid].sqHeadStallReason;
+            return StqFull;
         } else {
             return robHeadStallReason;
         }

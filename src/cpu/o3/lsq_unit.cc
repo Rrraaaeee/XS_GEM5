@@ -555,8 +555,10 @@ LSQUnit::completeDataAccess(PacketPtr pkt)
 LSQUnit::LSQUnit(uint32_t lqEntries, uint32_t sqEntries, uint32_t sbufferEntries, uint32_t sbufferEvictThreshold,
     uint64_t storeBufferInactiveThreshold, uint32_t ldPipeStages, uint32_t stPipeStages,
     uint32_t maxRARQEntries, uint32_t maxRAWQEntries, unsigned rarDequeuePerCycle,
-    unsigned rawDequeuePerCycle, unsigned loadCompletionWidth, unsigned storeCompletionWidth)
-    : sbufferEvictThreshold(sbufferEvictThreshold),
+    unsigned rawDequeuePerCycle, unsigned loadCompletionWidth, unsigned storeCompletionWidth, unsigned sqOffload)
+    : 
+      maxSQoffload(sqOffload),
+      sbufferEvictThreshold(sbufferEvictThreshold),
       sbufferEntries(sbufferEntries),
       numSBufferRequest(0),
       numSingleRequest(0),
@@ -751,6 +753,8 @@ LSQUnit::LSQUnitStats::LSQUnitStats(statistics::Group *parent)
       ADD_STAT(sbufferEvictDuetoTimeout, statistics::units::Count::get(), ""),
       ADD_STAT(sbufferFullForward, statistics::units::Count::get(), ""),
       ADD_STAT(sbufferPartiForward, statistics::units::Count::get(), ""),
+      ADD_STAT(sbufferBWFull, statistics::units::Count::get(), ""),
+      ADD_STAT(sbufferNoEnqueue, statistics::units::Count::get(), ""),
       ADD_STAT(loadToUse, "Distribution of cycle latency between the "
                 "first time a load is issued and its completion"),
       ADD_STAT(loadTranslationLat, "Distribution of cycle latency between the "
@@ -2000,6 +2004,8 @@ LSQUnit::offloadToStoreBuffer()
 
     // write the committed store to storebuffer
     int offloaded = 0;
+    if (storesToWB ==0 ) {
+    }
     while (storesToWB > 0 &&
            storeWBIt.dereferenceable() &&
            storeWBIt->valid() &&
@@ -2091,9 +2097,13 @@ LSQUnit::offloadToStoreBuffer()
             storeWBIt++;
             offloaded++;
         }
-        if (storeBuffer.unsentSize() != 0) {
-            break;
-        }
+        // if (storeBuffer.unsentSize() != 0) {
+            // break;
+        // }
+    }
+
+    if (offloaded == maxSQoffload && storesToWB > 0) {
+        stats.sbufferBWFull ++;
     }
 }
 

@@ -295,6 +295,8 @@ IEW::IEWStats::IEWStats(CPU *cpu)
         {StallReason::StoreL2Bound, "StoreL2Bound"},
         {StallReason::StoreL3Bound, "StoreL3Bound"},
         {StallReason::StoreMemBound, "StoreMemBound"},
+        {StallReason::LdqFull, "ldqFull"},
+        {StallReason::StqFull, "stqFull"},
         {StallReason::MemSquashed, "MemSquashed"},
         {StallReason::Atomic,"Atomic"},
         {StallReason::ResumeUnblock, "ResumeUnblock"},
@@ -2234,6 +2236,9 @@ IEW::checkDispatchStall(ThreadID tid, int dq_stall, const DynInstPtr &dispatch_i
             if (head_inst->isVector()) {
                 return StallReason::VectorLongExecute;
             } else {
+                std::string s;
+                head_inst->dump(s);
+                // printf("Block head inst: %s\n", s.c_str());
                 return StallReason::ScalarLongExecute;
             }
         } else {

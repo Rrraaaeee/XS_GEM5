@@ -88,6 +88,8 @@ enum StallReason {
     StoreL2Bound,
     StoreL3Bound,
     StoreMemBound,
+    StqFull,
+    LdqFull,
     MemSquashed,  // maybe never used
     MemNotReady,
     MemCommitRateLimit,

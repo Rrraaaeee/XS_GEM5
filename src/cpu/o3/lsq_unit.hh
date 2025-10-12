@@ -289,8 +289,7 @@ class LSQUnit
 
   public:
     // storeQue -> storeBuffer -> cache
-    const int maxSQoffload = 2;
-    const int sqFullBufferSize = 4;
+    int maxSQoffload;
 
     // loadpipe
     const int loadPipeStages = 4;
@@ -337,7 +336,7 @@ class LSQUnit
       uint32_t sbufferEvictThreshold, uint64_t storeBufferInactiveThreshold,
       uint32_t ldPipeStages, uint32_t stPipeStages, uint32_t maxRARQEntries, uint32_t maxRAWQEntries,
       unsigned rarDequeuePerCycle, unsigned rawDequeuePerCycle,
-      unsigned loadCompletionWidth, unsigned storeCompletionWidth);
+      unsigned loadCompletionWidth, unsigned storeCompletionWidth, unsigned sqOffload);
 
     /** We cannot copy LSQUnit because it has stats for which copy
      * contructor is deleted explicitly. However, STL vector requires
@@ -883,6 +882,9 @@ class LSQUnit
         statistics::Scalar sbufferEvictDuetoTimeout;
         statistics::Scalar sbufferFullForward;
         statistics::Scalar sbufferPartiForward;
+        statistics::Scalar sbufferBWFull;
+        statistics::Scalar sbufferInorder;
+        statistics::Scalar sbufferNoEnqueue;
 
         /** Distribution of cycle latency between the first time a load
          * is issued and its completion */

@@ -184,6 +184,7 @@ class BaseO3CPU(BaseCPU):
     RAWDequeuePerCycle = Param.Unsigned(4, "Maximum number of instructions to dequeue from RAW queue per cycle")
     LoadCompletionWidth = Param.Unsigned(8, "Number of loads to complete per cycle")
     StoreCompletionWidth = Param.Unsigned(4, "Number of stores to complete per cycle")
+    StoreBufferEnqueueWidth = Param.Unsigned(2, "Number of stores to store buffer per cycle")
 
     SbufferEntries = Param.Unsigned(16, "Number of store buffer entries")
     SbufferEvictThreshold = Param.Unsigned(7, "store buffer eviction threshold")
